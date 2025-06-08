@@ -1,46 +1,38 @@
 using UnityEngine;
-using UnityEngine.InputSystem; 
-using System.Collections; 
+using UnityEngine.InputSystem;
+using System.Collections;
 
 public class Slingshot : MonoBehaviour
 {
     [Header("Configuración General")]
     public float maxStretch = 3.0f;
     public float launchForceMultiplier = 100f;
-    public int totalProjectiles = 5; // Número total de lanzamientos permitidos
+    public int totalProjectiles = 5;
     public float timeToPrepareNext = 0.5f;
-    // NUEVA VARIABLE: Retraso para activar el planeo
-    [Header("Configuración de Planeo")]
-    public float glideActivationDelay = 3.0f; // Segundos antes de que se active el planeo
 
     [Header("Referencias Esenciales")]
-    public Transform anchorPoint;       // Punto de anclaje de la resortera
-    public Transform spawnPoint;        // Punto donde aparece el nuevo proyectil
+    public Transform anchorPoint;
+    public Transform spawnPoint;
 
     [Header("Gestión de Tipos de Proyectiles")]
-    public GameObject[] projectilePrefabs_TypeSequence; // Asigna tus diferentes prefabs de proyectil aquí
-    private int currentProjectileTypeIndex = 0;         // Índice para ciclar por projectilePrefabs_TypeSequence
+    public GameObject[] projectilePrefabs_TypeSequence;
+    private int currentProjectileTypeIndex = 0;
 
     [Header("Bandas Visuales (Opcional)")]
     public LineRenderer bandLeft;
     public LineRenderer bandRight;
 
-    // Variables de estado del input
     private bool isDragging = false;
     private bool primaryInputStartedThisFrame = false;
     private bool primaryInputIsHeld = false;
     private Vector2 currentInputScreenPosition;
 
-    // Variables del proyectil actual
     private GameObject currentProjectile;
     private Rigidbody currentProjectileRb;
     private SpringJoint currentSpringJoint;
-    private int projectilesRemaining_TotalLaunches; // Contador para el total de lanzamientos
+    private int projectilesRemaining_TotalLaunches;
 
-    // Referencia al collider de este objeto (para iniciar el arrastre)
     private Collider objectCollider;
-
-    // Referencia al script de la cámara para seguir al proyectil
     private CameraFollowProjectile cameraFollowScript;
 
     void Start()
@@ -50,8 +42,6 @@ public class Slingshot : MonoBehaviour
         {
             Debug.LogWarning("Slingshot GameObject no tiene un Collider. La detección de inicio de arrastre podría no funcionar como se espera si se depende de un clic/toque directo sobre la resortera.");
         }
-
-        // Validaciones críticas
         if (projectilePrefabs_TypeSequence == null || projectilePrefabs_TypeSequence.Length == 0)
         {
             Debug.LogError("¡ERROR! 'Projectile Prefabs_Type Sequence' no está asignado o está vacío en el Inspector del Slingshot.");
@@ -71,8 +61,6 @@ public class Slingshot : MonoBehaviour
         {
             Debug.LogWarning("Spawn Point no asignado. Usando anchorPoint.position como punto de aparición.");
         }
-
-        // Obtener o agregar el script de seguimiento de la cámara
         if (Camera.main != null)
         {
             cameraFollowScript = Camera.main.GetComponent<CameraFollowProjectile>();
@@ -117,7 +105,7 @@ public class Slingshot : MonoBehaviour
             }
             else
             {
-                canStartDrag = true; // Permitir arrastrar si no hay collider específico en la resortera (arrastre global)
+                canStartDrag = true;
             }
 
             if (canStartDrag)
@@ -138,6 +126,56 @@ public class Slingshot : MonoBehaviour
         }
     }
 
+    void ReleaseCurrentProjectile()
+    {
+        if (currentProjectileRb == null || currentSpringJoint == null) return;
+
+        GameObject projectileToLaunch = currentProjectile;
+        Rigidbody projectileRbToLaunch = currentProjectileRb;
+
+        currentProjectileRb.isKinematic = false;
+        Vector3 launchDirection = anchorPoint.position - projectileToLaunch.transform.position;
+        float stretchAmount = launchDirection.magnitude;
+        Vector3 launchForce = launchDirection.normalized * stretchAmount * launchForceMultiplier;
+        currentProjectileRb.AddForce(launchForce);
+
+        Projectile projectileScript = projectileToLaunch.GetComponent<Projectile>();
+        if (projectileScript != null)
+        {
+            projectileScript.NotifyLaunched();
+        }
+        else
+        {
+            Debug.LogWarning("El proyectil lanzado no tiene un script 'Projectile.cs'.");
+        }
+
+        if (cameraFollowScript != null)
+        {
+            cameraFollowScript.StartFollowing(projectileToLaunch.transform);
+        }
+
+
+        currentProjectile = null;
+        currentProjectileRb = null;
+        Destroy(currentSpringJoint);
+        currentSpringJoint = null;
+
+        currentProjectileTypeIndex = (currentProjectileTypeIndex + 1) % projectilePrefabs_TypeSequence.Length;
+
+        if (projectilesRemaining_TotalLaunches >= 0)
+        {
+            Invoke("PrepareNextProjectile", timeToPrepareNext);
+        }
+        else
+        {
+            UpdateBandsVisuals();
+        }
+    }
+
+    // --- CORRUTINA ELIMINADA ---
+    // private IEnumerator ActivateGlideAndFollowDelayed(...) { ... }
+
+    // ... (El resto del script: PrepareNextProjectile, DragCurrentProjectile, etc. no cambian)
     void ProcessInputs()
     {
         primaryInputStartedThisFrame = false;
@@ -174,7 +212,6 @@ public class Slingshot : MonoBehaviour
             {
                 primaryInputIsHeld = false;
             }
-            // Mantener primaryInputIsHeld si el botón sigue presionado pero no fue el frame en que se presionó
             else if (Mouse.current.leftButton.isPressed)
             {
                 primaryInputIsHeld = true;
@@ -208,7 +245,7 @@ public class Slingshot : MonoBehaviour
             currentProjectileRb.isKinematic = true;
 
             currentSpringJoint = currentProjectile.AddComponent<SpringJoint>();
-            currentSpringJoint.connectedBody = anchorPoint.GetComponent<Rigidbody>(); //
+            currentSpringJoint.connectedBody = anchorPoint.GetComponent<Rigidbody>();
             currentSpringJoint.spring = 50f; currentSpringJoint.damper = 5f;
             currentSpringJoint.autoConfigureConnectedAnchor = false;
             currentSpringJoint.anchor = Vector3.zero;
@@ -237,93 +274,6 @@ public class Slingshot : MonoBehaviour
         currentProjectile.transform.position = anchorPoint.position + directionFromAnchor;
     }
 
-    void ReleaseCurrentProjectile()
-    {
-        if (currentProjectileRb == null || currentSpringJoint == null) return;
-
-        GameObject projectileToLaunch = currentProjectile;
-        Rigidbody projectileRbToLaunch = currentProjectileRb;
-
-        currentProjectileRb.isKinematic = false;
-        Vector3 launchDirection = anchorPoint.position - projectileToLaunch.transform.position;
-        float stretchAmount = launchDirection.magnitude;
-        Vector3 launchForce = launchDirection.normalized * stretchAmount * launchForceMultiplier;
-        currentProjectileRb.AddForce(launchForce);
-
-        Projectile projectileScript = projectileToLaunch.GetComponent<Projectile>();
-        if (projectileScript != null)
-        {
-            projectileScript.NotifyLaunched(); //
-        }
-        else
-        {
-            Debug.LogWarning("El proyectil lanzado '" + projectileToLaunch.name + "' no tiene un script 'Projectile.cs'. Sus poderes no se activarán.", projectileToLaunch);
-        }
-
-        ProjectileGlideControl glideControl = projectileToLaunch.GetComponent<ProjectileGlideControl>(); //
-        if (glideControl != null && cameraFollowScript != null)
-        {
-            StartCoroutine(ActivateGlideAndFollowDelayed(glideControl, projectileToLaunch.transform, projectileRbToLaunch)); //
-        }
-        else if (cameraFollowScript != null) // Si no es planeador, pero quieres seguirlo
-        {
-            cameraFollowScript.StartFollowing(projectileToLaunch.transform);
-        }
-
-        currentProjectile = null;
-        currentProjectileRb = null;
-        Destroy(currentSpringJoint);
-        currentSpringJoint = null;
-
-        currentProjectileTypeIndex++;
-        if (currentProjectileTypeIndex >= projectilePrefabs_TypeSequence.Length)
-        {
-            currentProjectileTypeIndex = 0;
-        }
-
-        // La comprobación original era projectilesRemaining_TotalLaunches >= 0.
-        // Si se decrementó antes de la comprobación, projectilesRemaining_TotalLaunches > 0 es para cuando aún quedan.
-        // Y projectilesRemaining_TotalLaunches == 0 es para el último que se preparó.
-        if (projectilesRemaining_TotalLaunches >= 0) // Correcto para verificar si aún se pueden preparar más (después de decrementar)
-        {
-            Invoke("PrepareNextProjectile", timeToPrepareNext); //
-        }
-        else
-        {
-            UpdateBandsVisuals();
-        }
-    }
-
-    private IEnumerator ActivateGlideAndFollowDelayed(ProjectileGlideControl glideControl, Transform projectileTransform, Rigidbody projectileRb)
-    {
-        // Espera a que la física inicial del lanzamiento se aplique
-        yield return new WaitForFixedUpdate(); //
-
-        // Asegurarse de que los objetos aún existen (podrían ser destruidos por colisión temprana)
-        if (projectileTransform == null || projectileRb == null || cameraFollowScript == null)
-        {
-            yield break; // Salir de la corrutina si algo falta
-        }
-
-        // Iniciar el seguimiento de la cámara inmediatamente
-        cameraFollowScript.StartFollowing(projectileTransform); //
-
-        // Esperar el tiempo definido antes de activar el planeo
-        if (glideActivationDelay > 0)
-        {
-            yield return new WaitForSeconds(glideActivationDelay);
-        }
-
-        // Volver a asegurarse de que los objetos aún existen después del retraso
-        if (projectileTransform != null && glideControl != null && projectileRb != null)
-        {
-            // Activar el control de planeo en el proyectil
-            // Es importante usar la velocidad actual del Rigidbody en este punto,
-            // ya que habrá seguido una trayectoria balística.
-            glideControl.ActivateGlide(projectileRb.linearVelocity); //
-        }
-    }
-
     void UpdateBandsVisuals()
     {
         if (bandLeft == null || bandRight == null) return;
@@ -332,39 +282,33 @@ public class Slingshot : MonoBehaviour
         bandRight.enabled = showBands;
         if (showBands)
         {
-            bandLeft.SetPosition(0, anchorPoint.position); //
-            bandLeft.SetPosition(1, currentProjectile.transform.position); //
-            bandRight.SetPosition(0, anchorPoint.position); //
-            bandRight.SetPosition(1, currentProjectile.transform.position); //
+            bandLeft.SetPosition(0, anchorPoint.position);
+            bandLeft.SetPosition(1, currentProjectile.transform.position);
+            bandRight.SetPosition(0, anchorPoint.position);
+            bandRight.SetPosition(1, currentProjectile.transform.position);
         }
     }
 
     Vector3 GetWorldPositionFromScreen(Vector2 screenPos)
     {
         Ray cameraRay = Camera.main.ScreenPointToRay(screenPos);
-        // Asumimos que la resortera y el arrastre ocurren en un plano Z constante relativo al anchorPoint.
-        // Esto es común para juegos 2.5D o 3D con mecánica de resortera estilo 2D.
-        Plane gamePlane = new Plane(Vector3.forward, new Vector3(0, 0, anchorPoint.position.z)); //
+        Plane gamePlane = new Plane(Vector3.forward, new Vector3(0, 0, anchorPoint.position.z));
         float enterDistance;
 
-        if (gamePlane.Raycast(cameraRay, out enterDistance)) //
+        if (gamePlane.Raycast(cameraRay, out enterDistance))
         {
-            return cameraRay.GetPoint(enterDistance); //
+            return cameraRay.GetPoint(enterDistance);
         }
         else
         {
-            // Fallback si el rayo es paralelo al plano (raro si la cámara no está mirando exactamente de lado)
-            // o si la cámara es ortográfica y el cálculo del plano no funciona como se espera.
             if (Camera.main.orthographic)
             {
-                // Para cámara ortográfica, convertir directamente de pantalla a mundo en el Z del anchor.
                 Vector3 worldPoint = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, Camera.main.WorldToScreenPoint(anchorPoint.position).z));
-                worldPoint.z = anchorPoint.position.z; // Asegurar el Z correcto
+                worldPoint.z = anchorPoint.position.z;
                 return worldPoint;
             }
-            // Para cámara en perspectiva, si el raycast al plano falla, usar un fallback basado en la distancia.
-            Debug.LogWarning("El rayo del input no intersectó el plano de juego definido por el anchor. Usando profundidad de fallback.");
-            return cameraRay.GetPoint(Vector3.Distance(Camera.main.transform.position, anchorPoint.position)); //
+            Debug.LogWarning("El rayo del input no intersectó el plano de juego. Usando profundidad de fallback.");
+            return cameraRay.GetPoint(Vector3.Distance(Camera.main.transform.position, anchorPoint.position));
         }
     }
 }
