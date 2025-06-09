@@ -1,51 +1,55 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI; 
+using UnityEngine.UI;
+using System.Collections;
 
 public class Projectile : MonoBehaviour
 {
     [Header("Configuracion del Poder")]
-    public ProjectilePowerType powerType = ProjectilePowerType.Normal; 
-    public bool powerRequiresTap = false; 
-    public GameObject effectOnActivatePrefab; 
-    public AudioClip soundOnActivate; 
+    public ProjectilePowerType powerType = ProjectilePowerType.Normal;
+    public bool powerRequiresTap = false;
+    public GameObject effectOnActivatePrefab;
+    public AudioClip soundOnActivate;
 
     [Header("Parametros Especificos del Poder")]
-    public float explosionRadius = 2f; 
-    public float explosionForce = 500f; 
-    public LayerMask explodableLayers; 
-    public GameObject[] splitProjectilePrefabs; 
-    public int numberOfSplits = 3; 
-    public float splitSpreadAngle = 30f; 
-    public float speedBoostMultiplier = 1.5f; 
-    public int maxPierces = 1; 
-    private int currentPierces = 0; 
+    public float explosionRadius = 2f;
+    public float explosionForce = 500f;
+    public LayerMask explodableLayers;
+    public GameObject[] splitProjectilePrefabs;
+    public int numberOfSplits = 3;
+    public float splitSpreadAngle = 30f;
+    public float speedBoostMultiplier = 1.5f;
+    public int maxPierces = 1;
 
-    protected Rigidbody rb; 
-    protected bool isLaunched = false; 
-    protected bool powerActivated = false; 
-    protected AudioSource audioSource; 
+    [Header("Ciclo de Vida")]
+    public float lifeTimeAfterCollision = 5f;
 
-    [Header("Boton de planeo")]
-    protected ProjectileGlideControl glideControl; 
-    protected CameraFollowProjectile cameraFollower; 
-    private Button glideButton; 
+    protected Rigidbody rb;
+    protected bool isLaunched = false;
+    protected bool powerActivated = false;
+    protected AudioSource audioSource;
+    protected ProjectileGlideControl glideControl;
+    protected CameraFollowProjectile cameraFollower;
+    private Button glideButton;
+
+    private int currentPierces = 0;
     private bool canStartGliding = true;
-
     private Slingshot slingshotOwner;
     private bool hasNotifiedOwner = false;
+    private bool isPendingDespawn = false;
+
     protected virtual void Awake()
     {
-        rb = GetComponent<Rigidbody>(); 
-        if (rb == null) Debug.LogError("El proyectil necesita un Rigidbody.", this); 
+        rb = GetComponent<Rigidbody>();
+        if (rb == null) Debug.LogError("El proyectil necesita un Rigidbody.", this);
 
-        audioSource = GetComponent<AudioSource>(); 
-        if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>(); 
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
 
-        glideControl = GetComponent<ProjectileGlideControl>(); 
-        if (Camera.main != null) 
+        glideControl = GetComponent<ProjectileGlideControl>();
+        if (Camera.main != null)
         {
-            cameraFollower = Camera.main.GetComponent<CameraFollowProjectile>(); 
+            cameraFollower = Camera.main.GetComponent<CameraFollowProjectile>();
         }
 
         GameObject glideButtonObject = GameObject.Find("GlideButton");
@@ -62,65 +66,66 @@ public class Projectile : MonoBehaviour
             }
         }
     }
+
     public void SetOwner(Slingshot owner)
     {
         this.slingshotOwner = owner;
     }
+
     public virtual void NotifyLaunched()
     {
-        isLaunched = true; 
-        powerActivated = false; 
-        currentPierces = 0; 
+        isLaunched = true;
+        powerActivated = false;
+        currentPierces = 0;
+        canStartGliding = true;
 
         if (glideControl != null && glideButton != null)
         {
-            canStartGliding = true;
-            glideButton.gameObject.SetActive(true); 
-            glideButton.onClick.RemoveAllListeners(); 
-            glideButton.onClick.AddListener(TryActivateGlide); 
+            glideButton.gameObject.SetActive(true);
+            glideButton.onClick.RemoveAllListeners();
+            glideButton.onClick.AddListener(TryActivateGlide);
         }
     }
 
     public void TryActivateGlide()
     {
-        // Solo activa el planeo si no se ha activado ya y si el control existe
         if (isLaunched && glideControl != null && !glideControl.IsGliding && canStartGliding)
         {
             canStartGliding = false;
             glideControl.ActivateGlide(rb.linearVelocity);
             if (glideButton != null)
             {
-                glideButton.gameObject.SetActive(false); // Ocultar el botón después de usarlo
+                glideButton.gameObject.SetActive(false);
             }
         }
     }
 
     protected virtual void Update()
     {
-        if (isLaunched && !powerActivated && powerRequiresTap) 
+        if (isLaunched && !powerActivated && powerRequiresTap)
         {
-            bool tapOccurred = false; 
-            if (Touchscreen.current != null && Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began) 
+            bool tapOccurred = false;
+            if (Touchscreen.current != null && Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began)
             {
-                tapOccurred = true; 
+                tapOccurred = true;
             }
-            else if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) 
+            else if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
             {
-                tapOccurred = true; 
+                tapOccurred = true;
             }
 
-            if (tapOccurred) 
+            if (tapOccurred)
             {
-                ActivatePower(); 
+                ActivatePower();
             }
         }
     }
 
     protected virtual void OnCollisionEnter(Collision collision)
     {
-        if (!isLaunched) return;
+        if (!isLaunched || isPendingDespawn) return;
 
-        bool shouldStopGlideAndFollow = false;
+        bool shouldStopAndNotify = true;
 
         switch (powerType)
         {
@@ -128,28 +133,29 @@ public class Projectile : MonoBehaviour
                 if (!powerActivated)
                 {
                     ActivatePower(collision.contacts[0].point);
-                    shouldStopGlideAndFollow = true;
                 }
                 break;
             case ProjectilePowerType.PierceThrough:
                 HandlePierce(collision.gameObject);
-                if (powerActivated)
+                if (!powerActivated)
                 {
-                    shouldStopGlideAndFollow = true;
+                    shouldStopAndNotify = false;
                 }
                 break;
             case ProjectilePowerType.SplitOnTap:
             case ProjectilePowerType.SpeedBoostOnTap:
             case ProjectilePowerType.Normal:
             default:
-                shouldStopGlideAndFollow = true;
                 break;
         }
 
-        if (shouldStopGlideAndFollow)
+        if (shouldStopAndNotify)
         {
             DeactivateGlideAndFollowIfNeeded();
-            NotifySlingshotToPrepareNext(); 
+            NotifySlingshotToPrepareNext();
+
+            isPendingDespawn = true;
+            StartCoroutine(StartDespawnTimer());
         }
     }
 
@@ -159,7 +165,7 @@ public class Projectile : MonoBehaviour
         powerActivated = true;
 
         DeactivateGlideAndFollowIfNeeded();
-        NotifySlingshotToPrepareNext(); 
+        NotifySlingshotToPrepareNext();
 
         if (soundOnActivate != null) audioSource.PlayOneShot(soundOnActivate);
         if (effectOnActivatePrefab != null) Instantiate(effectOnActivatePrefab, activationPoint ?? transform.position, Quaternion.identity);
@@ -182,13 +188,29 @@ public class Projectile : MonoBehaviour
 
     protected virtual void NotifySlingshotToPrepareNext()
     {
-        if (hasNotifiedOwner) return; 
+        if (hasNotifiedOwner) return;
+        hasNotifiedOwner = true;
+        slingshotOwner?.RequestNextProjectile();
+    }
 
-        if (slingshotOwner != null)
+    private IEnumerator StartDespawnTimer()
+    {
+        yield return new WaitForSeconds(lifeTimeAfterCollision);
+        if (this != null)
         {
-            hasNotifiedOwner = true; 
-            slingshotOwner.RequestNextProjectile();
+            Despawn();
         }
+    }
+
+    public void Despawn()
+    {
+        if (!this.enabled) return;
+
+        StopAllCoroutines();
+        NotifySlingshotToPrepareNext();
+
+        this.enabled = false;
+        Destroy(gameObject);
     }
 
     protected virtual void DeactivateGlideAndFollowIfNeeded()
@@ -208,74 +230,75 @@ public class Projectile : MonoBehaviour
             cameraFollower.StopFollowing();
         }
     }
+
     protected virtual void PerformExplosion(Vector3 explosionCenter)
     {
-        Collider[] colliders = Physics.OverlapSphere(explosionCenter, explosionRadius, explodableLayers); 
-        foreach (Collider hit in colliders) 
+        Collider[] colliders = Physics.OverlapSphere(explosionCenter, explosionRadius, explodableLayers);
+        foreach (Collider hit in colliders)
         {
-            Rigidbody hitRb = hit.GetComponent<Rigidbody>(); 
-            if (hitRb != null) 
+            Rigidbody hitRb = hit.GetComponent<Rigidbody>();
+            if (hitRb != null)
             {
-                hitRb.AddExplosionForce(explosionForce, explosionCenter, explosionRadius); 
+                hitRb.AddExplosionForce(explosionForce, explosionCenter, explosionRadius);
             }
         }
     }
 
     protected virtual void PerformSplit()
     {
-        if (splitProjectilePrefabs == null || splitProjectilePrefabs.Length == 0) return; 
-        for (int i = 0; i < numberOfSplits; i++) 
+        if (splitProjectilePrefabs == null || splitProjectilePrefabs.Length == 0) return;
+        for (int i = 0; i < numberOfSplits; i++)
         {
-            if (i >= splitProjectilePrefabs.Length) continue; 
-            float angle = (i - (numberOfSplits - 1) / 2.0f) * (splitSpreadAngle / (numberOfSplits > 1 ? numberOfSplits - 1 : 1)); 
-            Quaternion rotation; 
-            Vector3 currentVelocity = rb != null ? rb.linearVelocity : transform.forward; 
-            if (currentVelocity.magnitude < 0.1f) 
+            if (i >= splitProjectilePrefabs.Length) continue;
+            float angle = (i - (numberOfSplits - 1) / 2.0f) * (splitSpreadAngle / (numberOfSplits > 1 ? numberOfSplits - 1 : 1));
+            Quaternion rotation;
+            Vector3 currentVelocity = rb != null ? rb.linearVelocity : transform.forward;
+            if (currentVelocity.magnitude < 0.1f)
             {
-                rotation = Quaternion.AngleAxis(angle, transform.up) * transform.rotation; 
+                rotation = Quaternion.AngleAxis(angle, transform.up) * transform.rotation;
             }
             else
             {
-                Vector3 spreadAxis = Vector3.Cross(currentVelocity.normalized, Vector3.up); 
-                if (spreadAxis.sqrMagnitude < 0.01f) spreadAxis = Vector3.Cross(currentVelocity.normalized, Vector3.right); 
-                if (spreadAxis.sqrMagnitude < 0.01f) spreadAxis = Vector3.up; 
+                Vector3 spreadAxis = Vector3.Cross(currentVelocity.normalized, Vector3.up);
+                if (spreadAxis.sqrMagnitude < 0.01f) spreadAxis = Vector3.Cross(currentVelocity.normalized, Vector3.right);
+                if (spreadAxis.sqrMagnitude < 0.01f) spreadAxis = Vector3.up;
 
-                rotation = Quaternion.AngleAxis(angle, spreadAxis.normalized) * Quaternion.LookRotation(currentVelocity.normalized); 
+                rotation = Quaternion.AngleAxis(angle, spreadAxis.normalized) * Quaternion.LookRotation(currentVelocity.normalized);
             }
 
-            GameObject splitInstance = Instantiate(splitProjectilePrefabs[i], transform.position, rotation); 
-            Projectile splitProjectileScript = splitInstance.GetComponent<Projectile>(); 
-            Rigidbody splitRb = splitInstance.GetComponent<Rigidbody>(); 
+            GameObject splitInstance = Instantiate(splitProjectilePrefabs[i], transform.position, rotation);
+            Projectile splitProjectileScript = splitInstance.GetComponent<Projectile>();
+            Rigidbody splitRb = splitInstance.GetComponent<Rigidbody>();
 
-            if (splitRb != null && rb != null) 
+            if (splitRb != null && rb != null)
             {
-                splitRb.linearVelocity = rotation * Vector3.forward * currentVelocity.magnitude * 0.8f; //
+                splitRb.linearVelocity = rotation * Vector3.forward * currentVelocity.magnitude * 0.8f;
             }
-            if (splitProjectileScript != null) 
+            if (splitProjectileScript != null)
             {
-                splitProjectileScript.NotifyLaunched(); 
+                splitProjectileScript.NotifyLaunched();
             }
         }
     }
 
     protected virtual void PerformSpeedBoost()
     {
-        if (rb != null) 
+        if (rb != null)
         {
-            rb.AddForce(rb.linearVelocity.normalized * speedBoostMultiplier * rb.mass, ForceMode.Impulse); 
+            rb.AddForce(rb.linearVelocity.normalized * speedBoostMultiplier * rb.mass, ForceMode.Impulse);
         }
     }
 
     protected virtual void HandlePierce(GameObject collidedObject)
     {
-        if (currentPierces < maxPierces) 
+        if (currentPierces < maxPierces)
         {
-            currentPierces++; 
+            currentPierces++;
         }
         else
         {
-            powerActivated = true; 
-            DeactivateGlideAndFollowIfNeeded(); 
+            powerActivated = true;
+            DeactivateGlideAndFollowIfNeeded();
         }
     }
 }

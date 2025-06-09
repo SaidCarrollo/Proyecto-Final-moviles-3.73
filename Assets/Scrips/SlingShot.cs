@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class Slingshot : MonoBehaviour
 {
@@ -23,6 +24,10 @@ public class Slingshot : MonoBehaviour
     public LineRenderer bandLeft;
     public LineRenderer bandRight;
 
+    [Header("Referencias de UI")]
+    public Button glideButton;
+    public Button despawnButton;
+
     private bool isDragging = false;
     private bool primaryInputStartedThisFrame = false;
     private bool primaryInputIsHeld = false;
@@ -30,6 +35,7 @@ public class Slingshot : MonoBehaviour
 
     private GameObject currentProjectile;
     private Rigidbody currentProjectileRb;
+    private Projectile currentLaunchedProjectile;
     private int projectilesRemaining_TotalLaunches;
 
     private Collider objectCollider;
@@ -37,6 +43,9 @@ public class Slingshot : MonoBehaviour
 
     void Start()
     {
+        if (glideButton != null) glideButton.gameObject.SetActive(false);
+        if (despawnButton != null) despawnButton.gameObject.SetActive(false);
+
         objectCollider = GetComponent<Collider>();
         if (objectCollider == null)
         {
@@ -127,7 +136,21 @@ public class Slingshot : MonoBehaviour
         if (projectileScript != null)
         {
             projectileScript.NotifyLaunched();
-            projectileScript.SetOwner(this); 
+            projectileScript.SetOwner(this);
+            currentLaunchedProjectile = projectileScript;
+
+            ProjectileGlideControl glideControl = projectileToLaunch.GetComponent<ProjectileGlideControl>();
+            if (glideControl != null && glideButton != null)
+            {
+                glideButton.gameObject.SetActive(true);
+                glideButton.onClick.RemoveAllListeners();
+                glideButton.onClick.AddListener(projectileScript.TryActivateGlide);
+            }
+
+            if (despawnButton != null)
+            {
+                despawnButton.gameObject.SetActive(true);
+            }
         }
         else
         {
@@ -143,6 +166,38 @@ public class Slingshot : MonoBehaviour
         currentProjectileRb = null;
 
         currentProjectileTypeIndex = (currentProjectileTypeIndex + 1) % projectilePrefabs_TypeSequence.Length;
+    }
+
+    public void RequestNextProjectile()
+    {
+        HideGlideButton();
+        if (despawnButton != null) despawnButton.gameObject.SetActive(false);
+        currentLaunchedProjectile = null;
+
+        if (projectilesRemaining_TotalLaunches > 0)
+        {
+            Invoke("PrepareNextProjectile", timeToPrepareNext);
+        }
+        else
+        {
+            Debug.Log("Todos los proyectiles han sido lanzados.");
+            UpdateBandsVisuals();
+        }
+    }
+
+    public void HideGlideButton()
+    {
+        if (glideButton != null) glideButton.gameObject.SetActive(false);
+    }
+
+    public void DespawnCurrentProjectile()
+    {
+        if (currentLaunchedProjectile != null)
+        {
+            currentLaunchedProjectile.Despawn();
+            currentLaunchedProjectile = null;
+        }
+        if (despawnButton != null) despawnButton.gameObject.SetActive(false);
     }
 
     void ProcessInputs()
@@ -221,18 +276,6 @@ public class Slingshot : MonoBehaviour
             Debug.Log("No quedan más lanzamientos.");
         }
         UpdateBandsVisuals();
-    }
-    public void RequestNextProjectile()
-    {
-        if (projectilesRemaining_TotalLaunches > 0)
-        {
-            Invoke("PrepareNextProjectile", timeToPrepareNext);
-        }
-        else
-        {
-            Debug.Log("Todos los proyectiles han sido lanzados.");
-            UpdateBandsVisuals();
-        }
     }
     void DragCurrentProjectile(Vector2 screenPosition)
     {
