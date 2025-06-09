@@ -5,38 +5,36 @@ public class CameraFollowProjectile : MonoBehaviour
     [Header("Follow Settings")]
     public Transform target;
     public float smoothSpeed = 5.0f;
-    // AJUSTA ESTE OFFSET PARA UNA VISTA 2D (ej. más atrás en Z, y quizás más alto en Y)
-    // Ejemplo para un juego donde la acción principal ocurre en el plano XY mundial:
-    public Vector3 offset = new Vector3(0f, 5f, -15f); // Aumenta el valor negativo de Z
+
+    [Tooltip("El desplazamiento en X e Y desde el objetivo.")]
+    public Vector2 offset = new Vector2(0f, 5f);
+
+    [Tooltip("La posición fija en el eje Z para la cámara. Un valor negativo la aleja de la escena.")]
+    public float fixedZPosition = -20f;
 
     [Header("Rotation Settings")]
-    // Para un estilo Angry Birds, a menudo es mejor desactivar la rotación dinámica
-    // o usar una rotación más simple.
-    public bool lookAtTarget = false; // DESACTÍVALO para una cámara fija estilo 2D
+    [Tooltip("Si se activa, la cámara rotará para mirar al objetivo. Desactívalo para una cámara 2D.")]
+    public bool lookAtTarget = false;
     public float rotationSmoothSpeed = 5f;
 
-    // Si lookAtTarget es true, pero quieres una rotación más simple (solo mirar al centro del target):
     public bool simpleLookAt = true;
 
     private bool isFollowing = false;
-    private Quaternion initialRotation; // Para mantener la rotación inicial si lookAtTarget es false
+    private Quaternion initialRotation; 
 
     void Awake()
     {
-        initialRotation = transform.rotation; // Guarda la rotación inicial
+        // Guarda la rotación que la cámara tiene al iniciar la escena.
+        initialRotation = transform.rotation;
     }
-
 
     private void FixedUpdate()
     {
         if (target != null && isFollowing)
         {
-            // --- Posicionamiento ---
-            // El offset se aplica en el espacio del mundo directamente.
-            Vector3 desiredPosition = target.position + offset;
+            Vector3 desiredPosition = new Vector3(target.position.x + offset.x, target.position.y + offset.y, fixedZPosition);
             transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
 
-            // --- Rotación ---
             if (lookAtTarget)
             {
                 Quaternion desiredRotation;
@@ -55,25 +53,19 @@ public class CameraFollowProjectile : MonoBehaviour
                     }
                     else
                     {
-                        // Si no hay velocidad, mira hacia el 'forward' del objetivo o su posición
-                        // Para 2D, mirar hacia la posición podría ser mejor incluso aquí
                         desiredRotation = Quaternion.LookRotation(target.position - transform.position);
-                        // O Quaternion.LookRotation(target.forward);
                     }
                 }
                 transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, rotationSmoothSpeed * Time.deltaTime);
             }
             else
             {
-                // Si no estamos mirando al objetivo, mantenemos la rotación inicial o la que tenga la cámara.
-                // Para un estilo Angry Birds estricto donde la cámara no rota, podrías usar:
-                // transform.rotation = initialRotation;
-                // O simplemente no hacer nada aquí si quieres que la cámara mantenga cualquier rotación
-                // que se le haya dado en el editor y no la cambie dinámicamente.
-                // Si la cámara fue orientada correctamente en el editor, no se necesita más.
+                // Para una cámara 2D, mantenemos la rotación inicial.
+                transform.rotation = initialRotation;
             }
         }
     }
+
     public void StartFollowing(Transform newTarget)
     {
         target = newTarget;
@@ -85,6 +77,5 @@ public class CameraFollowProjectile : MonoBehaviour
     {
         isFollowing = false;
         Debug.Log("Camera stopped following.");
-        // target = null; // Opcional
     }
 }

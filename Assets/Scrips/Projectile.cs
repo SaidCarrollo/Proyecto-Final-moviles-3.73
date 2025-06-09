@@ -30,8 +30,10 @@ public class Projectile : MonoBehaviour
     protected ProjectileGlideControl glideControl; 
     protected CameraFollowProjectile cameraFollower; 
     private Button glideButton; 
-    private bool canStartGliding = true; 
+    private bool canStartGliding = true;
 
+    private Slingshot slingshotOwner;
+    private bool hasNotifiedOwner = false;
     protected virtual void Awake()
     {
         rb = GetComponent<Rigidbody>(); 
@@ -60,7 +62,10 @@ public class Projectile : MonoBehaviour
             }
         }
     }
-
+    public void SetOwner(Slingshot owner)
+    {
+        this.slingshotOwner = owner;
+    }
     public virtual void NotifyLaunched()
     {
         isLaunched = true; 
@@ -113,85 +118,96 @@ public class Projectile : MonoBehaviour
 
     protected virtual void OnCollisionEnter(Collision collision)
     {
-        if (!isLaunched) return; 
+        if (!isLaunched) return;
 
-        bool shouldStopGlideAndFollow = false; 
+        bool shouldStopGlideAndFollow = false;
 
-        switch (powerType) 
+        switch (powerType)
         {
-            case ProjectilePowerType.ExplodeOnImpact: 
-                if (!powerActivated) 
+            case ProjectilePowerType.ExplodeOnImpact:
+                if (!powerActivated)
                 {
-                    ActivatePower(collision.contacts[0].point); 
-                    shouldStopGlideAndFollow = true; 
+                    ActivatePower(collision.contacts[0].point);
+                    shouldStopGlideAndFollow = true;
                 }
                 break;
-            case ProjectilePowerType.PierceThrough: 
-                HandlePierce(collision.gameObject); 
-                if (powerActivated) 
+            case ProjectilePowerType.PierceThrough:
+                HandlePierce(collision.gameObject);
+                if (powerActivated)
                 {
-                    shouldStopGlideAndFollow = true; 
+                    shouldStopGlideAndFollow = true;
                 }
                 break;
-            case ProjectilePowerType.SplitOnTap: 
-            case ProjectilePowerType.SpeedBoostOnTap: 
-            case ProjectilePowerType.Normal: 
+            case ProjectilePowerType.SplitOnTap:
+            case ProjectilePowerType.SpeedBoostOnTap:
+            case ProjectilePowerType.Normal:
             default:
-                shouldStopGlideAndFollow = true; 
+                shouldStopGlideAndFollow = true;
                 break;
         }
 
-        if (shouldStopGlideAndFollow) 
+        if (shouldStopGlideAndFollow)
         {
-            DeactivateGlideAndFollowIfNeeded(); 
+            DeactivateGlideAndFollowIfNeeded();
+            NotifySlingshotToPrepareNext(); 
         }
     }
 
     public virtual void ActivatePower(Vector3? activationPoint = null)
     {
-        if (powerActivated || !isLaunched) return; 
-        powerActivated = true; 
+        if (powerActivated || !isLaunched) return;
+        powerActivated = true;
 
-        DeactivateGlideAndFollowIfNeeded(); 
+        DeactivateGlideAndFollowIfNeeded();
+        NotifySlingshotToPrepareNext(); 
 
-        if (soundOnActivate != null) audioSource.PlayOneShot(soundOnActivate); 
-        if (effectOnActivatePrefab != null) Instantiate(effectOnActivatePrefab, activationPoint ?? transform.position, Quaternion.identity); 
+        if (soundOnActivate != null) audioSource.PlayOneShot(soundOnActivate);
+        if (effectOnActivatePrefab != null) Instantiate(effectOnActivatePrefab, activationPoint ?? transform.position, Quaternion.identity);
 
-        switch (powerType) 
+        switch (powerType)
         {
-            case ProjectilePowerType.SplitOnTap: 
-                PerformSplit(); 
-                Destroy(gameObject); 
+            case ProjectilePowerType.SplitOnTap:
+                PerformSplit();
+                Destroy(gameObject);
                 break;
-            case ProjectilePowerType.SpeedBoostOnTap: 
-                PerformSpeedBoost(); 
+            case ProjectilePowerType.SpeedBoostOnTap:
+                PerformSpeedBoost();
                 break;
-            case ProjectilePowerType.ExplodeOnImpact: 
-                PerformExplosion(activationPoint ?? transform.position); 
-                Destroy(gameObject); 
+            case ProjectilePowerType.ExplodeOnImpact:
+                PerformExplosion(activationPoint ?? transform.position);
+                Destroy(gameObject);
                 break;
+        }
+    }
+
+    protected virtual void NotifySlingshotToPrepareNext()
+    {
+        if (hasNotifiedOwner) return; 
+
+        if (slingshotOwner != null)
+        {
+            hasNotifiedOwner = true; 
+            slingshotOwner.RequestNextProjectile();
         }
     }
 
     protected virtual void DeactivateGlideAndFollowIfNeeded()
     {
-        // --- MODIFICACIÓN: Ocultar el botón si aún estaba activo ---
         if (canStartGliding && glideButton != null)
         {
             glideButton.gameObject.SetActive(false);
-            canStartGliding = false; // Ya no se puede empezar a planear
+            canStartGliding = false;
         }
 
-        if (glideControl != null && glideControl.IsGliding) 
+        if (glideControl != null && glideControl.IsGliding)
         {
-            glideControl.DeactivateGlide(); 
+            glideControl.DeactivateGlide();
         }
-        if (cameraFollower != null && cameraFollower.target == this.transform) 
+        if (cameraFollower != null && cameraFollower.target == this.transform)
         {
-            cameraFollower.StopFollowing(); 
+            cameraFollower.StopFollowing();
         }
     }
-
     protected virtual void PerformExplosion(Vector3 explosionCenter)
     {
         Collider[] colliders = Physics.OverlapSphere(explosionCenter, explosionRadius, explodableLayers); 

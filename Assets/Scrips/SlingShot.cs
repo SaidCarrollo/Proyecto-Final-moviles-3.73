@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
+using UnityEngine.EventSystems;
 
 public class Slingshot : MonoBehaviour
 {
@@ -29,7 +30,6 @@ public class Slingshot : MonoBehaviour
 
     private GameObject currentProjectile;
     private Rigidbody currentProjectileRb;
-    private SpringJoint currentSpringJoint;
     private int projectilesRemaining_TotalLaunches;
 
     private Collider objectCollider;
@@ -40,7 +40,7 @@ public class Slingshot : MonoBehaviour
         objectCollider = GetComponent<Collider>();
         if (objectCollider == null)
         {
-            Debug.LogWarning("Slingshot GameObject no tiene un Collider. La detección de inicio de arrastre podría no funcionar como se espera si se depende de un clic/toque directo sobre la resortera.");
+            Debug.LogWarning("Slingshot GameObject no tiene un Collider. Esto ya no afecta el inicio del arrastre.");
         }
         if (projectilePrefabs_TypeSequence == null || projectilePrefabs_TypeSequence.Length == 0)
         {
@@ -90,25 +90,9 @@ public class Slingshot : MonoBehaviour
             if (isDragging) isDragging = false;
             return;
         }
-
-        if (primaryInputStartedThisFrame && !isDragging)
+        if (primaryInputStartedThisFrame && !isDragging && !EventSystem.current.IsPointerOverGameObject())
         {
-            bool canStartDrag = false;
-            if (objectCollider != null)
-            {
-                Ray ray = Camera.main.ScreenPointToRay(currentInputScreenPosition);
-                RaycastHit hit;
-                if (objectCollider.Raycast(ray, out hit, 200f))
-                {
-                    canStartDrag = true;
-                }
-            }
-            else
-            {
-                canStartDrag = true;
-            }
-
-            if (canStartDrag)
+            if (currentProjectile != null && currentProjectileRb.isKinematic)
             {
                 isDragging = true;
             }
@@ -128,21 +112,22 @@ public class Slingshot : MonoBehaviour
 
     void ReleaseCurrentProjectile()
     {
-        if (currentProjectileRb == null || currentSpringJoint == null) return;
+        if (currentProjectileRb == null) return;
 
         GameObject projectileToLaunch = currentProjectile;
         Rigidbody projectileRbToLaunch = currentProjectileRb;
 
-        currentProjectileRb.isKinematic = false;
+        projectileRbToLaunch.isKinematic = false;
         Vector3 launchDirection = anchorPoint.position - projectileToLaunch.transform.position;
         float stretchAmount = launchDirection.magnitude;
         Vector3 launchForce = launchDirection.normalized * stretchAmount * launchForceMultiplier;
-        currentProjectileRb.AddForce(launchForce);
+        projectileRbToLaunch.AddForce(launchForce);
 
         Projectile projectileScript = projectileToLaunch.GetComponent<Projectile>();
         if (projectileScript != null)
         {
             projectileScript.NotifyLaunched();
+            projectileScript.SetOwner(this); 
         }
         else
         {
@@ -154,28 +139,12 @@ public class Slingshot : MonoBehaviour
             cameraFollowScript.StartFollowing(projectileToLaunch.transform);
         }
 
-
         currentProjectile = null;
         currentProjectileRb = null;
-        Destroy(currentSpringJoint);
-        currentSpringJoint = null;
 
         currentProjectileTypeIndex = (currentProjectileTypeIndex + 1) % projectilePrefabs_TypeSequence.Length;
-
-        if (projectilesRemaining_TotalLaunches >= 0)
-        {
-            Invoke("PrepareNextProjectile", timeToPrepareNext);
-        }
-        else
-        {
-            UpdateBandsVisuals();
-        }
     }
 
-    // --- CORRUTINA ELIMINADA ---
-    // private IEnumerator ActivateGlideAndFollowDelayed(...) { ... }
-
-    // ... (El resto del script: PrepareNextProjectile, DragCurrentProjectile, etc. no cambian)
     void ProcessInputs()
     {
         primaryInputStartedThisFrame = false;
@@ -225,7 +194,6 @@ public class Slingshot : MonoBehaviour
 
     void PrepareNextProjectile()
     {
-        if (currentSpringJoint != null) Destroy(currentSpringJoint);
 
         if (projectilesRemaining_TotalLaunches > 0)
         {
@@ -244,12 +212,6 @@ public class Slingshot : MonoBehaviour
             }
             currentProjectileRb.isKinematic = true;
 
-            currentSpringJoint = currentProjectile.AddComponent<SpringJoint>();
-            currentSpringJoint.connectedBody = anchorPoint.GetComponent<Rigidbody>();
-            currentSpringJoint.spring = 50f; currentSpringJoint.damper = 5f;
-            currentSpringJoint.autoConfigureConnectedAnchor = false;
-            currentSpringJoint.anchor = Vector3.zero;
-            currentSpringJoint.connectedAnchor = Vector3.zero;
 
             projectilesRemaining_TotalLaunches--;
         }
@@ -260,7 +222,18 @@ public class Slingshot : MonoBehaviour
         }
         UpdateBandsVisuals();
     }
-
+    public void RequestNextProjectile()
+    {
+        if (projectilesRemaining_TotalLaunches > 0)
+        {
+            Invoke("PrepareNextProjectile", timeToPrepareNext);
+        }
+        else
+        {
+            Debug.Log("Todos los proyectiles han sido lanzados.");
+            UpdateBandsVisuals();
+        }
+    }
     void DragCurrentProjectile(Vector2 screenPosition)
     {
         if (currentProjectile == null) return;
@@ -277,11 +250,14 @@ public class Slingshot : MonoBehaviour
     void UpdateBandsVisuals()
     {
         if (bandLeft == null || bandRight == null) return;
-        bool showBands = currentProjectile != null && currentSpringJoint != null && currentProjectileRb != null && currentProjectileRb.isKinematic;
+
+        bool showBands = currentProjectile != null && currentProjectileRb != null && currentProjectileRb.isKinematic;
+
         bandLeft.enabled = showBands;
         bandRight.enabled = showBands;
         if (showBands)
         {
+
             bandLeft.SetPosition(0, anchorPoint.position);
             bandLeft.SetPosition(1, currentProjectile.transform.position);
             bandRight.SetPosition(0, anchorPoint.position);
