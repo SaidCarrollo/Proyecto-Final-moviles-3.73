@@ -2,15 +2,33 @@ using UnityEngine;
 
 public class ProjectileGlideControl : MonoBehaviour
 {
+    [Header("Energy & Glide Physics")]
+    [Tooltip("Multiplicador principal de la sustentación. Qué tan 'flotador' es el proyectil.")]
     public float liftMultiplier = 0.5f;
+    [Tooltip("Arrastre base del proyectil, simplemente por moverse en el aire.")]
     public float parasiticDrag = 0.1f;
+    [Tooltip("Arrastre EXTRA que se genera al 'tirar hacia arriba' para generar sustentación. Clave para el realismo.")]
     public float inducedDrag = 1.5f;
+
+    [Header("Control")]
+    [Tooltip("Sensibilidad del acelerómetro para controlar el ángulo de ataque.")]
     public float controlSensitivity = 1.0f;
+    [Tooltip("Fuerza de empuje adicional al picar para ganar velocidad. 0 para desactivar.")]
+    public float diveThrust = 2.0f;
+
+    [Header("Dive Recovery")]
+    [Tooltip("Bono de sustentación al recuperarse de una picada. >1 para un efecto notable.")]
     public float diveRecoveryBonus = 1.5f;
+
+    [Header("2.5D Constraints")]
     public float targetZPosition = 0f;
     public float zCorrectionForce = 10f;
+
+    [Header("Glide Altitude Limits")]
     public float maxYPosition = 30f;
     public float minYPosition = 0.5f;
+
+    [Header("Visual Rotation")]
     public float rotationSmoothness = 5f;
 
     private Rigidbody rb;
@@ -64,7 +82,6 @@ public class ProjectileGlideControl : MonoBehaviour
         float speedSqr = velocity.sqrMagnitude;
 
         Vector3 liftDirection = new Vector3(-velocityDirection.y, velocityDirection.x, 0).normalized;
-
         float liftCoefficient = angleOfAttack > 0 ? angleOfAttack : 0;
         float liftForceMagnitude = speedSqr * liftCoefficient * liftMultiplier;
 
@@ -72,16 +89,21 @@ public class ProjectileGlideControl : MonoBehaviour
         {
             liftForceMagnitude *= diveRecoveryBonus;
         }
-
         Vector3 liftForce = liftDirection * liftForceMagnitude;
 
         float parasiticDragForceMagnitude = speedSqr * parasiticDrag;
         float inducedDragForceMagnitude = liftCoefficient * liftCoefficient * inducedDrag;
-
         Vector3 dragForce = -velocityDirection * (parasiticDragForceMagnitude + inducedDragForceMagnitude);
+
+        Vector3 thrustForce = Vector3.zero;
+        if (tiltInput < 0)
+        {
+            thrustForce = velocityDirection * Mathf.Abs(tiltInput) * diveThrust;
+        }
 
         rb.AddForce(liftForce);
         rb.AddForce(dragForce);
+        rb.AddForce(thrustForce);
 
         float visualAngle = Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg;
         Quaternion targetRotation = Quaternion.Euler(0, 0, visualAngle - 90);
