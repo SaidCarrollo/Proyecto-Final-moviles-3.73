@@ -134,6 +134,8 @@ public class Projectile : MonoBehaviour
                 {
                     ActivatePower(collision.contacts[0].point);
                 }
+                // La notificación y destrucción se maneja dentro de ActivatePower para este caso.
+                shouldStopAndNotify = false;
                 break;
             case ProjectilePowerType.PierceThrough:
                 HandlePierce(collision.gameObject);
@@ -151,8 +153,7 @@ public class Projectile : MonoBehaviour
 
         if (shouldStopAndNotify)
         {
-            DeactivateGlideAndFollowIfNeeded();
-            NotifySlingshotToPrepareNext();
+            DeactivateGlideIfNeeded();
 
             isPendingDespawn = true;
             StartCoroutine(StartDespawnTimer());
@@ -164,17 +165,19 @@ public class Projectile : MonoBehaviour
         if (powerActivated || !isLaunched) return;
         powerActivated = true;
 
-        DeactivateGlideAndFollowIfNeeded();
-        NotifySlingshotToPrepareNext();
+        DeactivateGlideIfNeeded();
 
         if (soundOnActivate != null) audioSource.PlayOneShot(soundOnActivate);
         if (effectOnActivatePrefab != null) Instantiate(effectOnActivatePrefab, activationPoint ?? transform.position, Quaternion.identity);
+
+        bool projectileIsDestroyedByPower = false;
 
         switch (powerType)
         {
             case ProjectilePowerType.SplitOnTap:
                 PerformSplit();
                 Destroy(gameObject);
+                projectileIsDestroyedByPower = true;
                 break;
             case ProjectilePowerType.SpeedBoostOnTap:
                 PerformSpeedBoost();
@@ -182,7 +185,13 @@ public class Projectile : MonoBehaviour
             case ProjectilePowerType.ExplodeOnImpact:
                 PerformExplosion(activationPoint ?? transform.position);
                 Destroy(gameObject);
+                projectileIsDestroyedByPower = true;
                 break;
+        }
+
+        if (projectileIsDestroyedByPower)
+        {
+            NotifySlingshotToPrepareNext();
         }
     }
 
@@ -213,7 +222,7 @@ public class Projectile : MonoBehaviour
         Destroy(gameObject);
     }
 
-    protected virtual void DeactivateGlideAndFollowIfNeeded()
+    protected virtual void DeactivateGlideIfNeeded()
     {
         if (canStartGliding && glideButton != null)
         {
@@ -225,10 +234,7 @@ public class Projectile : MonoBehaviour
         {
             glideControl.DeactivateGlide();
         }
-        if (cameraFollower != null && cameraFollower.target == this.transform)
-        {
-            cameraFollower.StopFollowing();
-        }
+
     }
 
     protected virtual void PerformExplosion(Vector3 explosionCenter)
@@ -298,7 +304,7 @@ public class Projectile : MonoBehaviour
         else
         {
             powerActivated = true;
-            DeactivateGlideAndFollowIfNeeded();
+            DeactivateGlideIfNeeded();
         }
     }
 }
