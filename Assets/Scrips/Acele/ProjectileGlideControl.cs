@@ -66,7 +66,7 @@ public class ProjectileGlideControl : MonoBehaviour
         Vector3 velocityDirection = speed > 0.01f ? currentVelocity.normalized : transform.forward;
 
         // --- 1. Input del Jugador (Acelerómetro para Pitch) ---
-        float tiltInput = Input.acceleration.y; // Inclinación arriba/abajo.
+        float tiltInput = -Input.acceleration.y;
 
         // --- 2. Calcular Fuerzas Aerodinámicas ---
         // Sustentación (Lift)
@@ -131,7 +131,7 @@ public class ProjectileGlideControl : MonoBehaviour
             // Opcionalmente, desactivar planeo si toca el suelo:
             // DeactivateGlide();
             // Projectile script podría manejar esto en OnCollisionEnter también.
-        }
+        }
     }
 
     // Helper para obtener ángulos entre -180 y 180
