@@ -100,6 +100,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d99027253cb1614c918041f864dc404, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  angulo: 0
 --- !u!1 &7655279780453328577
 GameObject:
   m_ObjectHideFlags: 0
@@ -115,6 +116,7 @@ GameObject:
   - component: {fileID: 6993034974285224534}
   - component: {fileID: 3814578008339790967}
   - component: {fileID: 3950220298665087250}
+  - component: {fileID: 7472024036685684752}
   m_Layer: 0
   m_Name: Pajaaro1
   m_TagString: Untagged
@@ -237,7 +239,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 32
+  m_Constraints: 0
   m_CollisionDetection: 0
 --- !u!114 &3814578008339790967
 MonoBehaviour:
@@ -278,15 +280,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ecbd5dc2572d9174f94f210ba26baaa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  liftCoefficient: 15
-  dragCoefficient: 0.5
-  angularDragForce: 2
-  tiltToPitchSensitivity: 30
-  pitchCorrectionTorque: 5
-  yawAlignmentTorque: 3
-  minSpeedForLift: 3
-  maxPitchAngle: 60
-  minPitchAngle: -45
+  liftMultiplier: 0.5
+  parasiticDrag: 0.1
+  inducedDrag: 1.5
+  controlSensitivity: 1
+  targetZPosition: 0
+  zCorrectionForce: 10
   maxYPosition: 15
   minYPosition: -5
   rotationSmoothness: 5
+--- !u!114 &7472024036685684752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7655279780453328577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 224cf1936f75e9848a4a2d804b91b3db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spriteRenderer: {fileID: 7663282562662574848}
+  idleSprite: {fileID: 21300000, guid: 1fdcf8e269a228b408f3e9b5537cc953, type: 3}
+  glideSprite: {fileID: 21300000, guid: 9b66a6b2a06a75a46885a37d901ae75a, type: 3}
+  crashSprite: {fileID: 21300000, guid: 05c55f954f8d9ae4eb95abc12ca6ad53, type: 3}

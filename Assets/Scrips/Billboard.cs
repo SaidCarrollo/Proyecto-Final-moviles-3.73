@@ -2,22 +2,34 @@ using UnityEngine;
 
 public class BillboardSprite : MonoBehaviour
 {
+    public float angulo = 0f;
+
     private Camera mainCamera;
+    private Transform parentTransform;
 
     void Start()
     {
-        // Guardamos la referencia a la cámara principal para no tener que buscarla en cada frame.
         mainCamera = Camera.main;
+        // Guardamos la referencia al transform del padre para mayor eficiencia.
+        parentTransform = transform.parent;
+
+        if (parentTransform == null)
+        {
+            Debug.LogError("Este script requiere que el objeto sea hijo de otro.", this);
+        }
     }
 
-    // Usamos LateUpdate para asegurarnos de que la rotación se aplica DESPUÉS
-    // de que la cámara se haya movido en el frame actual.
     void LateUpdate()
     {
-        if (mainCamera == null) return;
+        // Salimos si no hay cámara o si el objeto no tiene un padre.
+        if (mainCamera == null || parentTransform == null) return;
 
-        // Hacemos que la rotación de este objeto sea la misma que la de la cámara.
-        // Esto mantiene el sprite siempre orientado hacia el jugador, sin inclinarse.
-        transform.rotation = mainCamera.transform.rotation;
+        Vector3 direccionAdelante = (transform.position - mainCamera.transform.position).normalized;
+
+        Quaternion rotacionPadreConAngulo = parentTransform.rotation * Quaternion.Euler(0, 0, angulo);
+        Vector3 vectorArriba = rotacionPadreConAngulo * Vector3.up;
+
+        Quaternion rotacionFinal = Quaternion.LookRotation(direccionAdelante, vectorArriba);
+        transform.rotation = rotacionFinal;
     }
 }

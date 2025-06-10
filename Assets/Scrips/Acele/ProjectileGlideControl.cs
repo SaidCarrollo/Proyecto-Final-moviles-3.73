@@ -2,156 +2,129 @@ using UnityEngine;
 
 public class ProjectileGlideControl : MonoBehaviour
 {
-    [Header("Glide Physics Configuration")]
-    public float liftCoefficient = 15f;         // Cuánta sustentación se genera. Ajusta según masa del Rigidbody.
-    public float dragCoefficient = 0.5f;        // Resistencia del aire.
-    public float angularDragForce = 2f;         // Resistencia a la rotación, ayuda a estabilizar.
-    public float tiltToPitchSensitivity = 30f;  // Grados de pitch por unidad de inclinación del acelerómetro.
-    public float pitchCorrectionTorque = 5f;    // Fuerza para corregir el pitch hacia el control del jugador.
-    public float yawAlignmentTorque = 3f;       // Fuerza para alinear el yaw con la dirección de la velocidad.
+    [Header("Energy & Glide Physics")]
+    [Tooltip("Multiplicador principal de la sustentación. Qué tan 'flotador' es el proyectil.")]
+    public float liftMultiplier = 0.5f;
+    [Tooltip("Arrastre base del proyectil, simplemente por moverse en el aire.")]
+    public float parasiticDrag = 0.1f;
+    [Tooltip("Arrastre EXTRA que se genera al 'tirar hacia arriba' para generar sustentación. Clave para el realismo.")]
+    public float inducedDrag = 1.5f;
 
-    [Header("Glide Speed & Angle Limits")]
-    public float minSpeedForLift = 3f;        // Velocidad mínima para una sustentación efectiva.
-    public float maxPitchAngle = 60f;         // Máximo ángulo de cabeceo hacia arriba.
-    public float minPitchAngle = -45f;        // Máximo ángulo de cabeceo hacia abajo (picada).
+    [Header("Control")]
+    [Tooltip("Sensibilidad del acelerómetro para controlar el ángulo de ataque.")]
+    public float controlSensitivity = 1.0f;
 
-    [Header("Glide Constraints")]
+    [Header("2.5D Constraints")]
+    public float targetZPosition = 0f;
+    public float zCorrectionForce = 10f;
+
+    [Header("Glide Altitude Limits")]
     public float maxYPosition = 30f;
-    public float minYPosition = 0.5f;         // Asumiendo que 0 es el suelo.
-    public float rotationSmoothness = 5f;     // Para Slerp de rotación general (menos usado ahora).
+    public float minYPosition = 0.5f;
+
+    [Header("Visual Rotation")]
+    public float rotationSmoothness = 5f;
 
     private Rigidbody rb;
     private bool isGliding = false;
-
+    private ProjectileSpriteManager spriteManager;
     public bool IsGliding => isGliding;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        spriteManager = GetComponent<ProjectileSpriteManager>();
         if (rb == null)
         {
-            Debug.LogError("ProjectileGlideControl requires a Rigidbody on the projectile.", this);
+            Debug.LogError("ProjectileGlideControl requiere un Rigidbody.", this);
             enabled = false;
             return;
         }
-        // Asegúrate de que el Rigidbody tenga una masa y drag razonables por defecto.
-        // El drag lineal del Rigidbody se puede poner a 0 si usamos nuestro propio dragForce.
-        // rb.drag = 0; // Opcional, si nuestro dragCoefficient es el principal.
         enabled = false;
     }
 
     public void ActivateGlide(Vector3 launchVelocity)
     {
         if (rb == null) return;
-
         this.enabled = true;
         isGliding = true;
-        rb.useGravity = true; // La gravedad DEBE estar activa.
-        rb.linearVelocity = launchVelocity; // Velocidad inicial.
-
-        // Orientación inicial (puede ser refinada)
-        if (launchVelocity.sqrMagnitude > 0.01f)
+        rb.useGravity = true;
+        rb.linearVelocity = launchVelocity;
+        targetZPosition = transform.position.z;
+        Debug.Log(gameObject.name + " ENERGY GLIDE Activated.");
+        if (spriteManager != null)
         {
-            transform.rotation = Quaternion.LookRotation(launchVelocity.normalized); //
+            spriteManager.SetGlideSprite();
         }
-        Debug.Log(gameObject.name + " Realistic Glide Control Activated (using forces). Velocity: " + launchVelocity);
     }
 
     void FixedUpdate()
     {
         if (!isGliding || rb == null) return;
 
-        Vector3 currentVelocity = rb.linearVelocity;
-        float speed = currentVelocity.magnitude;
-        Vector3 velocityDirection = speed > 0.01f ? currentVelocity.normalized : transform.forward;
+        Vector3 velocity = rb.linearVelocity;
+        if (velocity.sqrMagnitude < 0.1f) return;
 
-        // --- 1. Input del Jugador (Acelerómetro para Pitch) ---
-        float tiltInput = -Input.acceleration.y;
+        // --- 1. Lógica de Límites de Altitud y Eje Z ---
+        HandleAltitudeAndDepthLimits(velocity);
 
-        // --- 2. Calcular Fuerzas Aerodinámicas ---
-        // Sustentación (Lift)
-        float speedFactor = Mathf.Clamp01(speed / minSpeedForLift); // Menos sustentación a baja velocidad.
-        // La sustentación es proporcional al cuadrado de la velocidad y al ángulo de ataque (pitch).
-        // Aquí, el 'pitch' del transform (su orientación local X) influye en transform.up.
-        // Un modelo simplificado: la sustentación es mayormente hacia el 'arriba' local del ave.
-        float liftPower = liftCoefficient * speed * speedFactor; // o speed * speed
-        Vector3 liftForce = transform.up * liftPower;
+        // --- 2. Input del Jugador ---
+        // El input ahora controla el "ángulo de ataque" (AoA).
+        // Tirar hacia arriba (tilt>0) = más sustentación y más arrastre.
+        // Picar (tilt<0) = menos sustentación y menos arrastre.
+        float tiltInput = -Input.acceleration.y * controlSensitivity;
+        float angleOfAttack = Mathf.Clamp(tiltInput, -0.5f, 1.0f); // Limitamos para que no sea super efectivo en picada.
+
+        // --- 3. Cálculo de Fuerzas Aerodinámicas ---
+        Vector3 velocityDirection = velocity.normalized;
+        float speedSqr = velocity.sqrMagnitude;
+
+        // La dirección de la sustentación es siempre perpendicular a la velocidad.
+        Vector3 liftDirection = new Vector3(-velocityDirection.y, velocityDirection.x, 0).normalized;
+
+        // La magnitud de la sustentación depende de la velocidad al cuadrado y el ángulo de ataque.
+        float liftCoefficient = angleOfAttack > 0 ? angleOfAttack : 0; // Solo generamos sustentación positiva.
+        float liftForceMagnitude = speedSqr * liftCoefficient * liftMultiplier;
+        Vector3 liftForce = liftDirection * liftForceMagnitude;
+
+        // La magnitud del arrastre tiene dos partes:
+        // 1. Arrastre Parásito: por la forma del objeto y la velocidad.
+        float parasiticDragForceMagnitude = speedSqr * parasiticDrag;
+        // 2. Arrastre Inducido: por el acto de generar sustentación. ¡Esta es la clave!
+        float inducedDragForceMagnitude = liftCoefficient * liftCoefficient * inducedDrag; // Cuadrático para que sea muy notorio.
+
+        Vector3 dragForce = -velocityDirection * (parasiticDragForceMagnitude + inducedDragForceMagnitude);
+
+        // --- 4. Aplicar Fuerzas y Rotación ---
         rb.AddForce(liftForce);
-
-        // Resistencia (Drag)
-        Vector3 dragForce = -velocityDirection * dragCoefficient * speed * speed; //
         rb.AddForce(dragForce);
 
-        // --- 3. Control de Rotación (Torque) ---
-        // Pitch Control (Cabeceo basado en input)
-        float targetPitch = Mathf.Clamp(tiltInput * tiltToPitchSensitivity, minPitchAngle, maxPitchAngle);
-        float currentPitch = GetSignedEulerAngle(transform.eulerAngles.x);
-
-        float pitchError = Mathf.DeltaAngle(currentPitch, targetPitch);
-        Vector3 pitchTorque = transform.right * pitchError * pitchCorrectionTorque;
-        rb.AddTorque(pitchTorque);
-
-        // Yaw Control (Alinearse con la dirección de la velocidad horizontal)
-        Vector3 velocityHorizontalDir = new Vector3(velocityDirection.x, 0, velocityDirection.z).normalized;
-        if (velocityHorizontalDir.sqrMagnitude > 0.01f)
-        {
-            Quaternion targetYawRotation = Quaternion.LookRotation(velocityHorizontalDir);
-            Quaternion currentYawRotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
-            float yawError = Quaternion.Angle(currentYawRotation, targetYawRotation); // Simplificado
-
-            // Determinar si girar a la izquierda o derecha
-            Vector3 localVelDir = transform.InverseTransformDirection(velocityHorizontalDir);
-            float yawSign = Mathf.Sign(localVelDir.x);
-
-            Vector3 yawTorque = transform.up * yawError * yawSign * yawAlignmentTorque * -1f; // -1f puede necesitar ajuste
-            rb.AddTorque(yawTorque);
-        }
-
-        // Estabilización de Roll (Evitar que dé vueltas sobre sí mismo)
-        float currentRoll = GetSignedEulerAngle(transform.eulerAngles.z);
-        Vector3 rollTorque = -transform.forward * currentRoll * angularDragForce; // Corregir hacia roll = 0
-        rb.AddTorque(rollTorque);
-
-
-        // Limitar velocidad angular general para que no gire demasiado rápido
-        rb.angularVelocity = Vector3.ClampMagnitude(rb.angularVelocity, angularDragForce * 2f); // Ajustar multiplicador
-
-
-        // --- 4. Límites de Altitud ---
-        Vector3 currentPosition = rb.position;
-        if (currentPosition.y > maxYPosition && rb.linearVelocity.y > 0)
-        {
-            rb.position = new Vector3(currentPosition.x, maxYPosition, currentPosition.z);
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
-        }
-        else if (currentPosition.y < minYPosition && rb.linearVelocity.y < 0)
-        {
-            rb.position = new Vector3(currentPosition.x, minYPosition, currentPosition.z);
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, rb.linearVelocity.y * -0.3f, rb.linearVelocity.z); // Pequeño rebote o parada
-            // Opcionalmente, desactivar planeo si toca el suelo:
-            // DeactivateGlide();
-            // Projectile script podría manejar esto en OnCollisionEnter también.
-        }
+        // La rotación visual sigue a la dirección de la velocidad.
+        float visualAngle = Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg;
+        Quaternion targetRotation = Quaternion.Euler(0, 0, visualAngle - 90);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSmoothness * Time.fixedDeltaTime);
     }
 
-    // Helper para obtener ángulos entre -180 y 180
-    float GetSignedEulerAngle(float angle)
+    private void HandleAltitudeAndDepthLimits(Vector3 currentVelocity)
     {
-        angle %= 360;
-        if (angle > 180)
-            return angle - 360;
-        return angle;
+        // Corrección del Eje Z
+        float zError = targetZPosition - rb.position.z;
+        rb.AddForce(0, 0, zError * zCorrectionForce, ForceMode.Force);
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, rb.linearVelocity.y, rb.linearVelocity.z * 0.9f);
+
+        // Límites de Altitud
+        if ((rb.position.y >= maxYPosition && currentVelocity.y > 0) || (rb.position.y <= minYPosition && currentVelocity.y < 0))
+        {
+            // Si tocamos el techo o el suelo, forzamos la velocidad vertical a cero para no quedarnos pegados.
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+        }
     }
 
     public void DeactivateGlide()
     {
         if (!isGliding) return;
-
         isGliding = false;
         this.enabled = false;
-        // La gravedad ya debería estar activa.
-        // Puedes resetear el drag angular si lo modificaste mucho en el Rigidbody.
-        // rb.angularDrag = originalAngularDrag;
-        Debug.Log(gameObject.name + " Realistic Glide Control Deactivated (using forces).");
+        Debug.Log(gameObject.name + " ENERGY GLIDE Deactivated.");
     }
 }

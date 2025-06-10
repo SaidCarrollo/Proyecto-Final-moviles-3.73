@@ -37,7 +37,7 @@ public class Projectile : MonoBehaviour
     private Slingshot slingshotOwner;
     private bool hasNotifiedOwner = false;
     private bool isPendingDespawn = false;
-
+    private ProjectileSpriteManager spriteManager;
     protected virtual void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -47,6 +47,7 @@ public class Projectile : MonoBehaviour
         if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
 
         glideControl = GetComponent<ProjectileGlideControl>();
+        spriteManager = GetComponent<ProjectileSpriteManager>();
         if (Camera.main != null)
         {
             cameraFollower = Camera.main.GetComponent<CameraFollowProjectile>();
@@ -124,7 +125,10 @@ public class Projectile : MonoBehaviour
     protected virtual void OnCollisionEnter(Collision collision)
     {
         if (!isLaunched || isPendingDespawn) return;
-
+        if (spriteManager != null)
+        {
+            spriteManager.SetCrashSprite();
+        }
         DeactivateGlideIfNeeded();
 
         bool shouldStartDespawn = true;
