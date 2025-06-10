@@ -62,7 +62,7 @@ public class Projectile : MonoBehaviour
         {
             if (glideControl != null)
             {
-                Debug.LogWarning("No se encontró un GameObject con el nombre 'GlideButton' en la escena.", this);
+               // Debug.LogWarning("No se encontró un GameObject con el nombre 'GlideButton' en la escena.", this);
             }
         }
     }
@@ -125,7 +125,9 @@ public class Projectile : MonoBehaviour
     {
         if (!isLaunched || isPendingDespawn) return;
 
-        bool shouldStopAndNotify = true;
+        DeactivateGlideIfNeeded();
+
+        bool shouldStartDespawn = true;
 
         switch (powerType)
         {
@@ -134,14 +136,13 @@ public class Projectile : MonoBehaviour
                 {
                     ActivatePower(collision.contacts[0].point);
                 }
-                // La notificación y destrucción se maneja dentro de ActivatePower para este caso.
-                shouldStopAndNotify = false;
+                shouldStartDespawn = false;
                 break;
             case ProjectilePowerType.PierceThrough:
                 HandlePierce(collision.gameObject);
                 if (!powerActivated)
                 {
-                    shouldStopAndNotify = false;
+                    shouldStartDespawn = false;
                 }
                 break;
             case ProjectilePowerType.SplitOnTap:
@@ -151,10 +152,8 @@ public class Projectile : MonoBehaviour
                 break;
         }
 
-        if (shouldStopAndNotify)
+        if (shouldStartDespawn)
         {
-            DeactivateGlideIfNeeded();
-
             isPendingDespawn = true;
             StartCoroutine(StartDespawnTimer());
         }
@@ -207,34 +206,36 @@ public class Projectile : MonoBehaviour
         yield return new WaitForSeconds(lifeTimeAfterCollision);
         if (this != null)
         {
+            
             Despawn();
+            
         }
     }
 
     public void Despawn()
     {
         if (!this.enabled) return;
-
         StopAllCoroutines();
         NotifySlingshotToPrepareNext();
-
         this.enabled = false;
         Destroy(gameObject);
     }
 
     protected virtual void DeactivateGlideIfNeeded()
     {
-        if (canStartGliding && glideButton != null)
+        if (canStartGliding)
         {
-            glideButton.gameObject.SetActive(false);
             canStartGliding = false;
+            if (glideButton != null && glideButton.gameObject.activeSelf)
+            {
+                glideButton.gameObject.SetActive(false);
+            }
         }
 
         if (glideControl != null && glideControl.IsGliding)
         {
             glideControl.DeactivateGlide();
         }
-
     }
 
     protected virtual void PerformExplosion(Vector3 explosionCenter)
@@ -268,14 +269,11 @@ public class Projectile : MonoBehaviour
                 Vector3 spreadAxis = Vector3.Cross(currentVelocity.normalized, Vector3.up);
                 if (spreadAxis.sqrMagnitude < 0.01f) spreadAxis = Vector3.Cross(currentVelocity.normalized, Vector3.right);
                 if (spreadAxis.sqrMagnitude < 0.01f) spreadAxis = Vector3.up;
-
                 rotation = Quaternion.AngleAxis(angle, spreadAxis.normalized) * Quaternion.LookRotation(currentVelocity.normalized);
             }
-
             GameObject splitInstance = Instantiate(splitProjectilePrefabs[i], transform.position, rotation);
             Projectile splitProjectileScript = splitInstance.GetComponent<Projectile>();
             Rigidbody splitRb = splitInstance.GetComponent<Rigidbody>();
-
             if (splitRb != null && rb != null)
             {
                 splitRb.linearVelocity = rotation * Vector3.forward * currentVelocity.magnitude * 0.8f;
@@ -303,8 +301,8 @@ public class Projectile : MonoBehaviour
         }
         else
         {
+
             powerActivated = true;
-            DeactivateGlideIfNeeded();
         }
     }
 }

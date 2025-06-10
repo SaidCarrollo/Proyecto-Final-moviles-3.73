@@ -253,6 +253,7 @@ MonoBehaviour:
   speedBoostMultiplier: 1.5
   maxPierces: 1
   lifeTimeAfterCollision: 5
+  BirdDestroy: {fileID: 0}
 --- !u!114 &3950220298665087250
 MonoBehaviour:
   m_ObjectHideFlags: 0
