@@ -284,6 +284,7 @@ MonoBehaviour:
   parasiticDrag: 0.1
   inducedDrag: 1.5
   controlSensitivity: 1
+  diveRecoveryBonus: 3
   targetZPosition: 0
   zCorrectionForce: 10
   maxYPosition: 15
