@@ -63,7 +63,7 @@ public class Projectile : MonoBehaviour
         {
             if (glideControl != null)
             {
-               // Debug.LogWarning("No se encontró un GameObject con el nombre 'GlideButton' en la escena.", this);
+                // Debug.LogWarning("No se encontró un GameObject con el nombre 'GlideButton' en la escena.", this);
             }
         }
     }
@@ -210,9 +210,9 @@ public class Projectile : MonoBehaviour
         yield return new WaitForSeconds(lifeTimeAfterCollision);
         if (this != null)
         {
-            
+
             Despawn();
-            
+
         }
     }
 
