@@ -78,6 +78,8 @@ public class Slingshot : MonoBehaviour
                 Debug.LogWarning("Main Camera no tiene CameraFollowProjectile script. Agregando uno.");
                 cameraFollowScript = Camera.main.gameObject.AddComponent<CameraFollowProjectile>();
             }
+            cameraFollowScript.slingshotTransform = this.transform;
+            cameraFollowScript.FocusOnSlingshot();
         }
         else
         {
@@ -173,6 +175,11 @@ public class Slingshot : MonoBehaviour
         HideGlideButton();
         if (despawnButton != null) despawnButton.gameObject.SetActive(false);
         currentLaunchedProjectile = null;
+
+        if (cameraFollowScript != null)
+        {
+            cameraFollowScript.FocusOnSlingshot();
+        }
 
         if (projectilesRemaining_TotalLaunches > 0)
         {

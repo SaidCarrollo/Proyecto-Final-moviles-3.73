@@ -20,11 +20,11 @@ public class CameraFollowProjectile : MonoBehaviour
     public bool simpleLookAt = true;
 
     private bool isFollowing = false;
-    private Quaternion initialRotation; 
-
+    private Quaternion initialRotation;
+    [Header("Fallback Target")]
+    public Transform slingshotTransform;
     void Awake()
     {
-        // Guarda la rotación que la cámara tiene al iniciar la escena.
         initialRotation = transform.rotation;
     }
 
@@ -77,5 +77,16 @@ public class CameraFollowProjectile : MonoBehaviour
     {
         isFollowing = false;
         Debug.Log("Camera stopped following.");
+        FocusOnSlingshot();
+    }
+
+    public void FocusOnSlingshot()
+    {
+        if (slingshotTransform != null)
+        {
+            target = slingshotTransform;
+            isFollowing = true; 
+            Debug.Log("Camera returning focus to the slingshot.");
+        }
     }
 }
