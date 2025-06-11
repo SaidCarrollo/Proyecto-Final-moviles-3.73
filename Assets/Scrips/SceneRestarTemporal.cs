@@ -4,6 +4,6 @@ public class SceneRestarTemporal : MonoBehaviour
 {
  public void Restardlevel()
     {
-        SceneManager.LoadScene("Gameplay Scene1");
+        SceneManager.LoadScene("Gameplay");
     }
 }

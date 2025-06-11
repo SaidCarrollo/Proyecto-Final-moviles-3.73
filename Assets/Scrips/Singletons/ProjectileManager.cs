@@ -2,21 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ProjectileManager : MonoBehaviour
+public class ProjectileManager : SingletonNonPersistent<ProjectileManager>
 {
-    public static ProjectileManager Instance { get; private set; }
     private readonly List<Projectile> activeProjectiles = new List<Projectile>();
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-        }
-        else
-        {
-            Instance = this;
-        }
+        Time.timeScale = 1;
     }
 
     public void RegisterProjectile(Projectile projectile)
