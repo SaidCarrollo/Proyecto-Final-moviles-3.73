@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using System.Collections;
+using UnityEngine.EventSystems;
 
 [System.Serializable]
 public struct DamageModifier
@@ -28,8 +29,20 @@ public class Projectile : MonoBehaviour
     public float speedBoostMultiplier = 1.5f;
     public int maxPierces = 1;
 
+    [Tooltip("Prefab del objeto que se soltará (ej. Una piedra con su propio Rigidbody).")]
+    public GameObject bombPrefab;
+
+    [Tooltip("Fuerza con la que el proyectil principal es impulsado hacia arriba al soltar la bomba.")]
+    public float upwardForceOnDrop = 50f;
+
     [Header("Ciclo de Vida")]
     public float lifeTimeAfterCollision = 5f;
+
+    [Tooltip("La velocidad que tendrá el proyectil al dirigirse al objetivo.")]
+    public float homingSpeed = 30f;
+
+    [Tooltip("Capas con las que el rayo puede colisionar para determinar el objetivo. Usa esto para apuntar a bloques o enemigos.")]
+    public LayerMask homingTargetLayers;
 
     protected Rigidbody rb;
     protected bool isLaunched = false;
@@ -113,27 +126,37 @@ public class Projectile : MonoBehaviour
         }
     }
 
+
+    // En Projectile.cs
+
     protected virtual void Update()
     {
         if (isLaunched && !powerActivated && powerRequiresTap)
         {
             bool tapOccurred = false;
+            Vector2 screenPosition = Vector2.zero;
+
             if (Touchscreen.current != null && Touchscreen.current.primaryTouch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began)
             {
                 tapOccurred = true;
+                screenPosition = Touchscreen.current.primaryTouch.position.ReadValue();
             }
             else if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
             {
                 tapOccurred = true;
+                screenPosition = Mouse.current.position.ReadValue();
             }
 
             if (tapOccurred)
             {
-                ActivatePower();
+                if (EventSystem.current.IsPointerOverGameObject())
+                {
+                    return;
+                }
+                ActivatePower(null, screenPosition);
             }
         }
     }
-
     protected virtual void OnCollisionEnter(Collision collision)
     {
         if (!isLaunched || isPendingDespawn) return;
@@ -155,6 +178,14 @@ public class Projectile : MonoBehaviour
             float finalDamage = baseDamage * damageMultiplier * (impactVelocity / 10f); 
 
             block.TakeDamage(finalDamage, MaterialType.Totora); 
+        }
+        Enemy enemy = collision.gameObject.GetComponent<Enemy>();
+        if (enemy != null)
+        {
+            float impactVelocity = collision.relativeVelocity.magnitude;
+            float damageToEnemy = baseDamage * (impactVelocity / 5f); 
+
+            enemy.TakeDamage(damageToEnemy);
         }
         if (spriteManager != null)
         {
@@ -183,6 +214,7 @@ public class Projectile : MonoBehaviour
             case ProjectilePowerType.SplitOnTap:
             case ProjectilePowerType.SpeedBoostOnTap:
             case ProjectilePowerType.Normal:
+
             default:
                 break;
         }
@@ -194,7 +226,7 @@ public class Projectile : MonoBehaviour
         }
     }
 
-    public virtual void ActivatePower(Vector3? activationPoint = null)
+    public virtual void ActivatePower(Vector3? activationPoint = null, Vector2? screenPosition = null)
     {
         if (powerActivated || !isLaunched) return;
         powerActivated = true;
@@ -210,7 +242,7 @@ public class Projectile : MonoBehaviour
         {
             case ProjectilePowerType.SplitOnTap:
                 PerformSplit();
-                gameObject.SetActive(false); 
+                gameObject.SetActive(false);
                 projectileIsDeactivatedByPower = true;
                 break;
             case ProjectilePowerType.SpeedBoostOnTap:
@@ -218,8 +250,14 @@ public class Projectile : MonoBehaviour
                 break;
             case ProjectilePowerType.ExplodeOnImpact:
                 PerformExplosion(activationPoint ?? transform.position);
-                gameObject.SetActive(false); 
+                gameObject.SetActive(false);
                 projectileIsDeactivatedByPower = true;
+                break;
+            case ProjectilePowerType.DropBomb:
+                PerformDropBomb();
+                break;
+            case ProjectilePowerType.Homing:
+                PerformHoming(screenPosition);
                 break;
         }
 
@@ -361,5 +399,66 @@ public class Projectile : MonoBehaviour
 
             powerActivated = true;
         }
+    }
+
+    protected virtual void PerformDropBomb()
+    {
+        if (bombPrefab == null)
+        {
+            Debug.LogError("El 'bombPrefab' no está asignado en el proyectil.", this);
+            return;
+        }
+
+        GameObject bombInstance = Instantiate(bombPrefab, transform.position, Quaternion.identity);
+        Collider selfCollider = GetComponent<Collider>();
+        Collider bombCollider = bombInstance.GetComponent<Collider>();
+
+        if (selfCollider != null && bombCollider != null)
+        {
+            Physics.IgnoreCollision(selfCollider, bombCollider);
+        }
+        else
+        {
+            Debug.LogWarning("No se pudo ignorar la colisión porque uno de los objetos no tiene Collider.", this);
+        }
+
+        if (rb != null)
+        {
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+            rb.AddForce(Vector3.up * upwardForceOnDrop, ForceMode.Impulse);
+        }
+    }
+
+    protected virtual void PerformHoming(Vector2? screenPosition)
+    {
+        if (rb == null || !screenPosition.HasValue) return;
+
+        Ray ray = Camera.main.ScreenPointToRay(screenPosition.Value);
+        RaycastHit hit;
+        Vector3 targetPoint;
+
+        if (Physics.Raycast(ray, out hit, 200f, homingTargetLayers))
+        {
+
+            targetPoint = hit.point;
+        }
+        else
+        {
+            Plane plane = new Plane(Vector3.forward, transform.position);
+            float distance;
+            if (plane.Raycast(ray, out distance))
+            {
+                targetPoint = ray.GetPoint(distance);
+            }
+            else
+            {
+                Debug.LogError("No se pudo determinar el punto objetivo para el poder Homing.");
+                return;
+            }
+        }
+
+        Vector3 direction = (targetPoint - transform.position).normalized;
+        rb.linearVelocity = direction * homingSpeed;
+        transform.rotation = Quaternion.LookRotation(direction);
     }
 }
