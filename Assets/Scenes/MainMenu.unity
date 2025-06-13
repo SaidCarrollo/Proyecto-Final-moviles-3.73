@@ -149,6 +149,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainMenuScene: MainMenu
+  loginScene: IniciaSesion
+  registerScene: Registro
+  nivelesScene: Niveles
   level1Scene: Level1
   level2Scene: Level2
   level3Scene: Level3
@@ -157,7 +160,6 @@ MonoBehaviour:
   pauseMenuScene: PauseMenu
   resultsScene: Results
   gameOverScene: GameOver
-  gameWinScene: GameWin
 --- !u!4 &58233720
 Transform:
   m_ObjectHideFlags: 0
@@ -788,7 +790,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 58233719}
         m_TargetAssemblyTypeName: Menu, Assembly-CSharp
-        m_MethodName: LoadScene1
+        m_MethodName: LoadNiveles
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -921,7 +923,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 58233719}
         m_TargetAssemblyTypeName: Menu, Assembly-CSharp
-        m_MethodName: LoadScene1
+        m_MethodName: LoadLogin
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1375,7 +1377,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 58233719}
         m_TargetAssemblyTypeName: Menu, Assembly-CSharp
-        m_MethodName: LoadScene1
+        m_MethodName: LoadRegister
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1506,9 +1508,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 58233719}
-        m_TargetAssemblyTypeName: Menu, Assembly-CSharp
-        m_MethodName: LoadScene1
+      - m_Target: {fileID: 1752639053}
+        m_TargetAssemblyTypeName: MainMenu, Assembly-CSharp
+        m_MethodName: ExitGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1884,7 +1886,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1752639052}
-  - component: {fileID: 1752639051}
+  - component: {fileID: 1752639053}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -1892,21 +1894,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1752639051
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1752639050}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e681cb311cfa3bc4c8a5ff10456aa137, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  loadingScreen: {fileID: 0}
-  minLoadDuration: 1.5
-  debugLogs: 1
 --- !u!4 &1752639052
 Transform:
   m_ObjectHideFlags: 0
@@ -1922,6 +1909,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1752639053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1752639050}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b02eddcbbfc1f614fb2d0595e3b55b2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Scene: 
 --- !u!1 &1801462219
 GameObject:
   m_ObjectHideFlags: 0
@@ -2086,7 +2086,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 58233719}
         m_TargetAssemblyTypeName: Menu, Assembly-CSharp
-        m_MethodName: LoadScene1
+        m_MethodName: LoadLevel1
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

@@ -39,6 +39,37 @@ public class SceneLoader : MonoBehaviour
         }
     }
 
+    public static void LoadSceneStatic(string sceneName, LoadMode mode = LoadMode.Single, bool showLoadingScreen = true)
+    {
+        if (Instance != null)
+        {
+            Instance.LoadSceneInstance(sceneName, mode, showLoadingScreen);
+        }
+        else
+        {
+            Debug.LogError("SceneLoader no está inicializado");
+            // Fallback: carga directa
+            SceneManager.LoadScene(sceneName);
+        }
+    }
+
+    // Método de instancia original (renombrado para claridad)
+    public void LoadSceneInstance(string sceneName, LoadMode mode = LoadMode.Single, bool showLoadingScreen = true)
+    {
+        if (string.IsNullOrEmpty(sceneName))
+        {
+            Debug.LogError("Nombre de escena no válido");
+            return;
+        }
+
+        if (currentLoadingRoutine != null)
+        {
+            StopCoroutine(currentLoadingRoutine);
+        }
+
+        currentLoadingRoutine = StartCoroutine(LoadSceneRoutine(sceneName, mode, showLoadingScreen));
+    }
+
     // ==== MÉTODOS PÚBLICOS PRINCIPALES ==== //
 
     public void LoadScene(string sceneName, LoadMode mode = LoadMode.Single, bool showLoadingScreen = true)

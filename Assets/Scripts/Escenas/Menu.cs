@@ -1,10 +1,14 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class Menu : MonoBehaviour
 {
     [Header("Escenas")]
     [SerializeField] private string mainMenuScene = "MainMenu";
+    [SerializeField] private string loginScene = "IniciaSesion";
+    [SerializeField] private string registerScene = "Registro";
+    [SerializeField] private string nivelesScene = "Niveles";
     [SerializeField] private string level1Scene = "Level1";
     [SerializeField] private string level2Scene = "Level2";
     [SerializeField] private string level3Scene = "Level3";
@@ -19,46 +23,95 @@ public class Menu : MonoBehaviour
 
     public void LoadMainMenu()
     {
-        Time.timeScale = 1f; 
-        SceneLoader.Instance.LoadScene(mainMenuScene, LoadMode.Single);
+        Time.timeScale = 1f;
+
+        if (SceneLoader.Instance != null)
+        {
+            SceneLoader.Instance.LoadSceneInstance(mainMenuScene, LoadMode.Single);
+            
+        }
+        else
+        {
+            // Fallback
+            SceneManager.LoadScene(mainMenuScene);
+        }
+    }
+
+    public void LoadLogin()
+    {
+        Time.timeScale = 1f;
+        if (SceneLoader.Instance != null)
+        {
+            SceneLoader.Instance.LoadScene(loginScene, LoadMode.Single);
+        }
+    }
+
+    public void LoadRegister()
+    {
+        Time.timeScale = 1f;
+        if (SceneLoader.Instance != null)
+        {
+            SceneLoader.Instance.LoadScene(registerScene, LoadMode.Single);
+        }
+    }
+
+    public void LoadNiveles()
+    {
+        Time.timeScale = 1f;
+        if (SceneLoader.Instance != null)
+        {
+            SceneLoader.Instance.LoadScene(nivelesScene, LoadMode.Single);
+        }
     }
 
     public void StartGame()
     {
         currentLevel = level1Scene;
-        SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
-        SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
+        if (SceneLoader.Instance != null)
+        {
+            SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
+            SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
+        }
     }
 
     public void OpenPauseMenu()
     {
-        SceneLoader.Instance.LoadScene(pauseMenuScene, LoadMode.Additive);
-        Time.timeScale = 0f;
+        //if (SceneLoader.Instance != null)
+        //{
+            SceneLoader.Instance.LoadScene(pauseMenuScene, LoadMode.Additive);
+            Time.timeScale = 0f;
+        //}
     }
 
     public void ClosePauseMenu()
     {
-        SceneLoader.Instance.UnloadScene(pauseMenuScene);
-        Time.timeScale = 1f;
+        //if (SceneLoader.Instance != null)
+        //{
+            SceneLoader.Instance.UnloadScene(pauseMenuScene);
+            Time.timeScale = 1f;
+        //}
     }
 
     public void ShowResults()
     {
-        if (SceneLoader.Instance.IsSceneLoaded(resultsScene))
-        {
+        //if (SceneLoader.Instance.IsSceneLoaded(resultsScene))
+        //{
             Scene resultsSceneObj = SceneManager.GetSceneByName(resultsScene);
             foreach (GameObject obj in resultsSceneObj.GetRootGameObjects())
             {
                 obj.SetActive(true);
             }
-        }
+        //}
     }
 
     public void LoadLevel(string levelName)
     {
-        currentLevel = levelName;
-        SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
-        SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
+        //if (SceneLoader.Instance != null)
+        //{
+            currentLevel = levelName;
+            SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
+            SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
+        //}
     }
 
     public void LoadNextLevel()
@@ -85,24 +138,36 @@ public class Menu : MonoBehaviour
                 break;
         }
 
-        SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
-        SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
+        //if (SceneLoader.Instance != null)
+        //{
+            SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
+            SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
+        //}
     }
 
     public void RestartCurrentLevel()
     {
-        SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
-        SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
+        //if (SceneLoader.Instance != null)
+        //{
+            SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
+            SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
+        //}
     }
 
     public void GameOver()
     {
-        SceneLoader.Instance.LoadScene(gameOverScene, LoadMode.Single);
+        //if (SceneLoader.Instance != null)
+        //{
+            SceneLoader.Instance.LoadScene(gameOverScene, LoadMode.Single);
+        //}
     }
 
     public void WinGame()
     {
-        SceneLoader.Instance.LoadScene(gameWinScene, LoadMode.Single);
+        //if (SceneLoader.Instance != null)
+        //{
+           SceneLoader.Instance.LoadScene(gameWinScene, LoadMode.Single);
+        //}
     }
 
     public void LoadLevel1() => LoadLevel(level1Scene);
