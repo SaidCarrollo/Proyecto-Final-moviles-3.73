@@ -256,30 +256,37 @@ public class Slingshot : MonoBehaviour
 
     void PrepareNextProjectile()
     {
-
         if (projectilesRemaining_TotalLaunches > 0)
         {
             GameObject prefabToSpawn = projectilePrefabs_TypeSequence[currentProjectileTypeIndex];
             Vector3 spawnPos = (spawnPoint != null) ? spawnPoint.position : anchorPoint.position;
-            currentProjectile = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
+
+            currentProjectile = ObjectPooler.Instance.SpawnFromPool(prefabToSpawn.name, spawnPos, Quaternion.identity);
+
+            if (currentProjectile == null)
+            {
+                Debug.LogError("No se pudo obtener el proyectil del pool. Revisa que el tag coincida con el nombre del prefab.");
+                return;
+            }
             currentProjectile.name = prefabToSpawn.name + "_Launch_" + (totalProjectiles - projectilesRemaining_TotalLaunches + 1);
 
             currentProjectileRb = currentProjectile.GetComponent<Rigidbody>();
             if (currentProjectileRb == null)
             {
                 Debug.LogError("¡El prefab del proyectil '" + prefabToSpawn.name + "' no tiene Rigidbody! No se puede preparar.", this);
-                Destroy(currentProjectile);
+                currentProjectile.SetActive(false); 
                 enabled = false;
                 return;
             }
-            currentProjectileRb.isKinematic = true;
 
+            currentProjectileRb.isKinematic = true;
 
             projectilesRemaining_TotalLaunches--;
         }
         else
         {
-            currentProjectile = null; currentProjectileRb = null;
+            currentProjectile = null;
+            currentProjectileRb = null;
             Debug.Log("No quedan más lanzamientos.");
         }
         UpdateBandsVisuals();

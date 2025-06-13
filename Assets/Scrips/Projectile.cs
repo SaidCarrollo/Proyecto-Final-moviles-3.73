@@ -3,6 +3,13 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using System.Collections;
 
+[System.Serializable]
+public struct DamageModifier
+{
+    public MaterialType targetMaterial;
+    [Tooltip("Multiplicador de daño contra este material. 1 = daño normal, 2 = doble daño, 0.5 = mitad de daño.")]
+    public float damageMultiplier;
+}
 public class Projectile : MonoBehaviour
 {
     [Header("Configuracion del Poder")]
@@ -38,6 +45,11 @@ public class Projectile : MonoBehaviour
     private bool hasNotifiedOwner = false;
     private bool isPendingDespawn = false;
     private ProjectileSpriteManager spriteManager;
+
+    [Tooltip(" Daño y Multiplicadores de daño contra materiales específicos.")]
+    public float baseDamage = 25f;
+    public DamageModifier[] damageModifiers;
+
     protected virtual void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -63,7 +75,7 @@ public class Projectile : MonoBehaviour
         {
             if (glideControl != null)
             {
-                // Debug.LogWarning("No se encontr� un GameObject con el nombre 'GlideButton' en la escena.", this);
+                // Debug.LogWarning("No se encontr� un GameObject con el nombre 'GlideButton' en la escena.", this);
             }
         }
     }
@@ -125,6 +137,25 @@ public class Projectile : MonoBehaviour
     protected virtual void OnCollisionEnter(Collision collision)
     {
         if (!isLaunched || isPendingDespawn) return;
+        StructureBlock block = collision.gameObject.GetComponent<StructureBlock>();
+        if (block != null)
+        {
+            float damageMultiplier = 1f;
+
+            foreach (var modifier in damageModifiers)
+            {
+                if (modifier.targetMaterial == block.materialType)
+                {
+                    damageMultiplier = modifier.damageMultiplier;
+                    break;
+                }
+            }
+
+            float impactVelocity = collision.relativeVelocity.magnitude;
+            float finalDamage = baseDamage * damageMultiplier * (impactVelocity / 10f); 
+
+            block.TakeDamage(finalDamage, MaterialType.Totora); 
+        }
         if (spriteManager != null)
         {
             spriteManager.SetCrashSprite();
@@ -173,26 +204,26 @@ public class Projectile : MonoBehaviour
         if (soundOnActivate != null) audioSource.PlayOneShot(soundOnActivate);
         if (effectOnActivatePrefab != null) Instantiate(effectOnActivatePrefab, activationPoint ?? transform.position, Quaternion.identity);
 
-        bool projectileIsDestroyedByPower = false;
+        bool projectileIsDeactivatedByPower = false;
 
         switch (powerType)
         {
             case ProjectilePowerType.SplitOnTap:
                 PerformSplit();
-                Destroy(gameObject);
-                projectileIsDestroyedByPower = true;
+                gameObject.SetActive(false); 
+                projectileIsDeactivatedByPower = true;
                 break;
             case ProjectilePowerType.SpeedBoostOnTap:
                 PerformSpeedBoost();
                 break;
             case ProjectilePowerType.ExplodeOnImpact:
                 PerformExplosion(activationPoint ?? transform.position);
-                Destroy(gameObject);
-                projectileIsDestroyedByPower = true;
+                gameObject.SetActive(false); 
+                projectileIsDeactivatedByPower = true;
                 break;
         }
 
-        if (projectileIsDestroyedByPower)
+        if (projectileIsDeactivatedByPower)
         {
             NotifySlingshotToPrepareNext();
         }
@@ -215,14 +246,36 @@ public class Projectile : MonoBehaviour
 
         }
     }
+    public void ResetProjectileState()
+    {
+        isLaunched = false;
+        powerActivated = false;
+        isPendingDespawn = false;
+        hasNotifiedOwner = false;
+        currentPierces = 0;
+        canStartGliding = true;
+
+        if (rb == null) rb = GetComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        DeactivateGlideIfNeeded();
+        if (spriteManager != null)
+        {
+            spriteManager.SetIdleSprite(); 
+        }
+
+        StopAllCoroutines();
+    }
 
     public void Despawn()
     {
-        if (!this.enabled) return;
+        if (!this.enabled || !gameObject.activeSelf) return;
         StopAllCoroutines();
         NotifySlingshotToPrepareNext();
         this.enabled = false;
-        Destroy(gameObject);
+        gameObject.SetActive(false);
     }
 
     protected virtual void DeactivateGlideIfNeeded()
