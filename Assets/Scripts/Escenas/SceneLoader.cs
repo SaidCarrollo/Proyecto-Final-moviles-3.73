@@ -23,8 +23,10 @@ public class SceneLoader : MonoBehaviour
             DontDestroyOnLoad(gameObject);
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
+
+            if (debugLogs) Debug.Log("SceneLoader inicializado correctamente");
         }
-        else
+        else if (Instance != this)
         {
             Destroy(gameObject);
         }
@@ -39,22 +41,7 @@ public class SceneLoader : MonoBehaviour
         }
     }
 
-    public static void LoadSceneStatic(string sceneName, LoadMode mode = LoadMode.Single, bool showLoadingScreen = true)
-    {
-        if (Instance != null)
-        {
-            Instance.LoadSceneInstance(sceneName, mode, showLoadingScreen);
-        }
-        else
-        {
-            Debug.LogError("SceneLoader no está inicializado");
-            // Fallback: carga directa
-            SceneManager.LoadScene(sceneName);
-        }
-    }
-
-    // Método de instancia original (renombrado para claridad)
-    public void LoadSceneInstance(string sceneName, LoadMode mode = LoadMode.Single, bool showLoadingScreen = true)
+    public void LoadScene(string sceneName, LoadMode mode = LoadMode.Single, bool showLoadingScreen = true)
     {
         if (string.IsNullOrEmpty(sceneName))
         {
@@ -70,16 +57,53 @@ public class SceneLoader : MonoBehaviour
         currentLoadingRoutine = StartCoroutine(LoadSceneRoutine(sceneName, mode, showLoadingScreen));
     }
 
-    // ==== MÉTODOS PÚBLICOS PRINCIPALES ==== //
-
-    public void LoadScene(string sceneName, LoadMode mode = LoadMode.Single, bool showLoadingScreen = true)
+    private IEnumerator LoadSceneRoutine(string sceneName, LoadMode mode, bool showLoading)
     {
-        if (currentLoadingRoutine != null)
+        if (debugLogs) Debug.Log($"Iniciando carga de '{sceneName}' en modo {mode}");
+
+        // Mostrar pantalla de carga
+        if (showLoading && loadingScreen != null)
         {
-            StopCoroutine(currentLoadingRoutine);
+            loadingScreen.SetActive(true);
+            if (debugLogs) Debug.Log("Pantalla de carga activada");
         }
 
-        currentLoadingRoutine = StartCoroutine(LoadSceneRoutine(sceneName, mode, showLoadingScreen));
+        float startTime = Time.time;
+
+        if (mode == LoadMode.Single)
+        {
+            yield return CleanupAdditiveScenes();
+        }
+
+        // Cargar la escena
+        AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName,
+            mode == LoadMode.Single ? LoadSceneMode.Single : LoadSceneMode.Additive);
+
+        loadOperation.allowSceneActivation = false;
+
+        // Esperar el tiempo mínimo de carga
+        while (Time.time - startTime < minLoadDuration || loadOperation.progress < 0.9f)
+        {
+            yield return null;
+        }
+
+        // Permitir activación de la escena
+        loadOperation.allowSceneActivation = true;
+
+        // Esperar a que termine completamente
+        while (!loadOperation.isDone)
+        {
+            yield return null;
+        }
+
+        // Ocultar pantalla de carga
+        if (showLoading && loadingScreen != null)
+        {
+            loadingScreen.SetActive(false);
+            if (debugLogs) Debug.Log("Pantalla de carga desactivada");
+        }
+
+        if (debugLogs) Debug.Log($"Escena '{sceneName}' cargada completamente");
     }
 
     public void UnloadScene(string sceneName)
@@ -90,76 +114,13 @@ public class SceneLoader : MonoBehaviour
         }
         else if (debugLogs)
         {
-            Debug.LogWarning($"Escena '{sceneName}' no está cargada para descargar.");
+            Debug.LogWarning($"Escena '{sceneName}' no está cargada para descargar");
         }
-    }
-
-    public void SwitchActiveScene(string sceneName)
-    {
-        Scene scene = SceneManager.GetSceneByName(sceneName);
-        if (scene.IsValid() && scene.isLoaded)
-        {
-            SceneManager.SetActiveScene(scene);
-        }
-    }
-
-    public bool IsSceneLoaded(string sceneName)
-    {
-        return loadedAdditiveScenes.Contains(sceneName);
-    }
-
-    // ==== CORRUTINAS DE CARGA ==== //
-
-    private IEnumerator LoadSceneRoutine(string sceneName, LoadMode mode, bool showLoading)
-    {
-        if (debugLogs) Debug.Log($"Iniciando carga de '{sceneName}' en modo {mode}");
-
-        // Activar pantalla de carga si es necesario
-        if (showLoading && loadingScreen != null)
-        {
-            loadingScreen.SetActive(true);
-        }
-
-        float startTime = Time.time;
-
-        // Limpiar escenas si es modo Single
-        if (mode == LoadMode.Single)
-        {
-            yield return CleanupAdditiveScenes();
-        }
-
-        // Cargar la escena principal
-        AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName,
-            mode == LoadMode.Single ? LoadSceneMode.Single : LoadSceneMode.Additive);
-
-        loadOperation.allowSceneActivation = false;
-
-        // Simular carga mínima
-        while (Time.time - startTime < minLoadDuration || loadOperation.progress < 0.9f)
-        {
-            yield return null;
-        }
-
-        loadOperation.allowSceneActivation = true;
-
-        // Esperar a que termine completamente
-        while (!loadOperation.isDone)
-        {
-            yield return null;
-        }
-
-        // Desactivar pantalla de carga
-        if (showLoading && loadingScreen != null)
-        {
-            loadingScreen.SetActive(false);
-        }
-
-        if (debugLogs) Debug.Log($"Carga de '{sceneName}' completada");
     }
 
     private IEnumerator UnloadSceneRoutine(string sceneName)
     {
-        if (debugLogs) Debug.Log($"Iniciando descarga de '{sceneName}'");
+        if (debugLogs) Debug.Log($"Descargando escena '{sceneName}'");
 
         AsyncOperation unloadOperation = SceneManager.UnloadSceneAsync(sceneName);
 
@@ -170,7 +131,7 @@ public class SceneLoader : MonoBehaviour
 
         Resources.UnloadUnusedAssets();
 
-        if (debugLogs) Debug.Log($"Descarga de '{sceneName}' completada");
+        if (debugLogs) Debug.Log($"Escena '{sceneName}' descargada completamente");
     }
 
     private IEnumerator CleanupAdditiveScenes()
@@ -189,7 +150,10 @@ public class SceneLoader : MonoBehaviour
         loadedAdditiveScenes.Clear();
     }
 
-    // ==== MANEJADORES DE EVENTOS ==== //
+    public bool IsSceneLoaded(string sceneName)
+    {
+        return loadedAdditiveScenes.Contains(sceneName);
+    }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -212,6 +176,6 @@ public class SceneLoader : MonoBehaviour
 
 public enum LoadMode
 {
-    Single,     
-    Additive    
+    Single,
+    Additive
 }

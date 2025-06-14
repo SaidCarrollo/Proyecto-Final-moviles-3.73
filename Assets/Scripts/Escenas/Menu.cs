@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class Menu : MonoBehaviour
 {
@@ -19,161 +18,93 @@ public class Menu : MonoBehaviour
     [SerializeField] private string gameOverScene = "GameOver";
     [SerializeField] private string gameWinScene = "GameWin";
 
-    private string currentLevel;
-
     public void LoadMainMenu()
     {
-        Time.timeScale = 1f;
-
-        if (SceneLoader.Instance != null)
-        {
-            SceneLoader.Instance.LoadSceneInstance(mainMenuScene, LoadMode.Single);
-            
-        }
-        else
-        {
-            // Fallback
-            SceneManager.LoadScene(mainMenuScene);
-        }
+        LoadLevel(mainMenuScene);
     }
 
     public void LoadLogin()
     {
-        Time.timeScale = 1f;
-        if (SceneLoader.Instance != null)
-        {
-            SceneLoader.Instance.LoadScene(loginScene, LoadMode.Single);
-        }
+        LoadLevel(loginScene);
     }
 
     public void LoadRegister()
     {
-        Time.timeScale = 1f;
-        if (SceneLoader.Instance != null)
-        {
-            SceneLoader.Instance.LoadScene(registerScene, LoadMode.Single);
-        }
+        LoadLevel(registerScene);
     }
 
     public void LoadNiveles()
     {
-        Time.timeScale = 1f;
-        if (SceneLoader.Instance != null)
-        {
-            SceneLoader.Instance.LoadScene(nivelesScene, LoadMode.Single);
-        }
+        LoadLevel(nivelesScene);
     }
 
     public void StartGame()
     {
-        currentLevel = level1Scene;
-        if (SceneLoader.Instance != null)
-        {
-            SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
-            SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
-        }
+        LoadLevel(level1Scene);
     }
 
-    public void OpenPauseMenu()
-    {
-        //if (SceneLoader.Instance != null)
-        //{
-            SceneLoader.Instance.LoadScene(pauseMenuScene, LoadMode.Additive);
-            Time.timeScale = 0f;
-        //}
-    }
-
-    public void ClosePauseMenu()
-    {
-        //if (SceneLoader.Instance != null)
-        //{
-            SceneLoader.Instance.UnloadScene(pauseMenuScene);
-            Time.timeScale = 1f;
-        //}
-    }
-
-    public void ShowResults()
-    {
-        //if (SceneLoader.Instance.IsSceneLoaded(resultsScene))
-        //{
-            Scene resultsSceneObj = SceneManager.GetSceneByName(resultsScene);
-            foreach (GameObject obj in resultsSceneObj.GetRootGameObjects())
-            {
-                obj.SetActive(true);
-            }
-        //}
-    }
-
-    public void LoadLevel(string levelName)
-    {
-        //if (SceneLoader.Instance != null)
-        //{
-            currentLevel = levelName;
-            SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
-            SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
-        //}
-    }
-
-    public void LoadNextLevel()
-    {
-        switch (currentLevel)
-        {
-            case "Level1":
-                currentLevel = level2Scene;
-                break;
-            case "Level2":
-                currentLevel = level3Scene;
-                break;
-            case "Level3":
-                currentLevel = level4Scene;
-                break;
-            case "Level4":
-                currentLevel = level5Scene;
-                break;
-            case "Level5":
-                WinGame();
-                return;
-            default:
-                currentLevel = level1Scene;
-                break;
-        }
-
-        //if (SceneLoader.Instance != null)
-        //{
-            SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
-            SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
-        //}
-    }
-
-    public void RestartCurrentLevel()
-    {
-        //if (SceneLoader.Instance != null)
-        //{
-            SceneLoader.Instance.LoadScene(currentLevel, LoadMode.Single);
-            SceneLoader.Instance.LoadScene(resultsScene, LoadMode.Additive, false);
-        //}
-    }
-
-    public void GameOver()
-    {
-        //if (SceneLoader.Instance != null)
-        //{
-            SceneLoader.Instance.LoadScene(gameOverScene, LoadMode.Single);
-        //}
-    }
-
-    public void WinGame()
-    {
-        //if (SceneLoader.Instance != null)
-        //{
-           SceneLoader.Instance.LoadScene(gameWinScene, LoadMode.Single);
-        //}
-    }
-
-    public void LoadLevel1() => LoadLevel(level1Scene);
     public void LoadLevel2() => LoadLevel(level2Scene);
     public void LoadLevel3() => LoadLevel(level3Scene);
     public void LoadLevel4() => LoadLevel(level4Scene);
     public void LoadLevel5() => LoadLevel(level5Scene);
-}
 
+    public void LoadPauseMenu()
+    {
+        LoadLevel(pauseMenuScene);
+    }
+
+    public void ShowResults()
+    {
+        LoadLevel(resultsScene);
+    }
+
+    public void GameOver()
+    {
+        LoadLevel(gameOverScene);
+    }
+
+    public void WinGame()
+    {
+        LoadLevel(gameWinScene);
+    }
+
+    public void RestartCurrentLevel()
+    {
+        string currentScene = SceneManager.GetActiveScene().name;
+        LoadLevel(currentScene);
+    }
+
+    public void LoadNextLevel()
+    {
+        int currentIndex = SceneManager.GetActiveScene().buildIndex;
+        int nextIndex = currentIndex + 1;
+
+        if (nextIndex < SceneManager.sceneCountInBuildSettings)
+        {
+            SceneManager.LoadScene(nextIndex);
+        }
+        else
+        {
+            Debug.Log(" No hay más niveles. ¡Ganaste el juego!");
+            LoadLevel(gameWinScene);
+        }
+    }
+
+    private void LoadLevel(string sceneName)
+    {
+        if (string.IsNullOrEmpty(sceneName))
+        {
+            Debug.LogError(" Nombre de escena vacío o nulo.");
+            return;
+        }
+
+        if (Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            SceneManager.LoadScene(sceneName);
+        }
+        else
+        {
+            Debug.LogError($" La escena '{sceneName}' no está en Build Settings o está mal escrita.");
+        }
+    }
+}
