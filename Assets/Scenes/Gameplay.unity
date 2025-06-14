@@ -1090,7 +1090,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8353559157669692579, guid: b298137729ec0534e97ff534e52c876e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 38.75
+      value: 39.33172
       objectReference: {fileID: 0}
     - target: {fileID: 8353559157669692579, guid: b298137729ec0534e97ff534e52c876e, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2782,7 +2782,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8353559157669692579, guid: b298137729ec0534e97ff534e52c876e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 34.28828
+      value: 34.87
       objectReference: {fileID: 0}
     - target: {fileID: 8353559157669692579, guid: b298137729ec0534e97ff534e52c876e, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3311,6 +3311,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pauseMenuPanel: {fileID: 1744015809}
   settingsMenuPanel: {fileID: 0}
+  winPanel: {fileID: 0}
+  losePanel: {fileID: 0}
   forceDespawnButton: {fileID: 1918465039}
 --- !u!4 &1780733329
 Transform:
@@ -3429,7 +3431,7 @@ Transform:
   m_GameObject: {fileID: 1884672987}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 33.1, y: -0.87, z: 0}
+  m_LocalPosition: {x: 33.681717, y: -0.87, z: 0}
   m_LocalScale: {x: 12.625945, y: 1, z: 1.1876}
   m_ConstrainProportionsScale: 0
   m_Children: []

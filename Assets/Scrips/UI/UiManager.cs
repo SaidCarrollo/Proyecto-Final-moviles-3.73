@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,8 +6,29 @@ public class UIManager : MonoBehaviour
     [Header("Menus & Panels")]
     [SerializeField] private GameObject pauseMenuPanel;
     [SerializeField] private GameObject settingsMenuPanel;
+    // --- LÍNEAS AÑADIDAS ---
+    [Tooltip("Arrastra aquí el panel que se muestra al ganar.")]
+    [SerializeField] private GameObject winPanel;
+    [Tooltip("Arrastra aquí el panel que se muestra al perder.")]
+    [SerializeField] private GameObject losePanel;
+    // -----------------------
+
     [Header("Botones de UI")]
     public Button forceDespawnButton;
+
+    private void OnEnable()
+    {
+
+        GameManager.OnGameWon += ShowWinPanel;
+        GameManager.OnGameLost += ShowLosePanel;
+    }
+
+    private void OnDisable()
+    {
+
+        GameManager.OnGameWon -= ShowWinPanel;
+        GameManager.OnGameLost -= ShowLosePanel;
+    }
 
     void Start()
     {
@@ -16,22 +36,53 @@ public class UIManager : MonoBehaviour
         {
             if (ProjectileManager.Instance != null)
             {
-                forceDespawnButton.onClick.AddListener(ProjectileManager.Instance.ForceDespawnAllProjectiles);
+               forceDespawnButton.onClick.AddListener(ProjectileManager.Instance.ForceDespawnAllProjectiles);
             }
             else
             {
-                Debug.LogError("No se encontró una instancia de ProjectileManager. El botón de despawn no funcionará.");
-                forceDespawnButton.gameObject.SetActive(false);
+               Debug.LogError("No se encontró una instancia de ProjectileManager. El botón de despawn no funcionará.");
+               forceDespawnButton.gameObject.SetActive(false);
             }
+
+        }
+
+    }
+
+    private void ShowWinPanel()
+    {
+        if (winPanel != null)
+        {
+
+            if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+
+            winPanel.SetActive(true);
         }
     }
+
+    private void ShowLosePanel()
+    {
+        if (losePanel != null)
+        {
+
+            if (pauseMenuPanel != null) pauseMenuPanel.SetActive(false);
+
+            losePanel.SetActive(true);
+        }
+    }
+
     public void TogglePauseMenu()
     {
         bool isActive = !pauseMenuPanel.activeSelf;
         pauseMenuPanel.SetActive(isActive);
 
-        // Opcional: Pausar el juego cuando el menú se activa
-        Time.timeScale = isActive ? 0f : 1f;
+        if (winPanel.activeSelf || losePanel.activeSelf)
+        {
+            Time.timeScale = 1f; 
+        }
+        else
+        {
+            Time.timeScale = isActive ? 0f : 1f;
+        }
     }
 
     public void ShowSettingsMenu()
@@ -58,7 +109,6 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // Un método más genérico si lo prefieres
     public void SetGameObjectActive(GameObject targetObject)
     {
         targetObject.SetActive(true);

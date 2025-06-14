@@ -187,6 +187,8 @@ public class Slingshot : MonoBehaviour
         }
         else
         {
+            GameManager.Instance.NotifyOutOfProjectiles();
+            Debug.Log("Todos los proyectiles han sido lanzados.");
             Debug.Log("Todos los proyectiles han sido lanzados.");
             UpdateBandsVisuals();
         }

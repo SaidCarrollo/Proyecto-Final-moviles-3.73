@@ -45,7 +45,7 @@ public class Enemy : MonoBehaviour
 
     private void Die()
     {
-
+        GameManager.Instance.RegisterEnemyDeath();
         if (destructionEffectPrefab != null)
         {
             Instantiate(destructionEffectPrefab, transform.position, Quaternion.identity);
