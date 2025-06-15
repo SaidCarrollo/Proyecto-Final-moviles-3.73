@@ -8,8 +8,7 @@ using UnityEngine.Events; // Necesario para UnityEvent
 
 // Creamos un evento personalizado para pasar el nivel cargado a otros scripts.
 // Esto es una buena práctica para que los scripts no dependan directamente unos de otros.
-[System.Serializable]
-public class OnLoginSuccessEvent : UnityEvent<int> { }
+
 
 public class LoginManager : MonoBehaviour
 {
