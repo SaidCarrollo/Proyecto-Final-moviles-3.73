@@ -1,37 +1,36 @@
-using UnityEngine;
-using TMPro;
 using Firebase;
 using Firebase.Auth;
 using Firebase.Firestore;
 using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.Events;
+using TMPro;
+using System;
 
 [System.Serializable]
 public class OnLoginSuccessEvent : UnityEvent<int> { }
 
 public class FirebaseManager : MonoBehaviour
 {
-    // --- Singleton Pattern ---
-    // Esto nos permite acceder a este script desde cualquier lugar con FirebaseManager.Instance
+    // --- Singleton, UI Refs, etc. (sin cambios) ---
     public static FirebaseManager Instance { get; private set; }
-
-    // --- Referencias a la UI (asígnalas en el Inspector) ---
     [Header("UI Elements")]
     public TMP_InputField emailInputField;
     public TMP_InputField passwordInputField;
     public TMP_Text feedbackText;
-    // (Aquí también podrías poner los campos para el registro)
-
     [Header("Events")]
     public OnLoginSuccessEvent OnLoginSuccess;
 
-    // --- Firebase ---
+    // --- Evento Estático para la UI (se mantiene) ---
+    public static event Action OnAuthStateChanged_Custom;
+
+    // --- Propiedades de Firebase y Usuario (se mantienen) ---
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+    public FirebaseUser CurrentUser { get; private set; }
 
     void Awake()
     {
-        // Configuración del Singleton
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -39,37 +38,42 @@ public class FirebaseManager : MonoBehaviour
         else
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Hacemos que este objeto no se destruya al cambiar de escena
+            DontDestroyOnLoad(gameObject);
         }
     }
 
+    // --- CORRECCIÓN 1: VOLVEMOS A async void Start() ---
+    // Esto asegura que Firebase se inicialice por completo ANTES de que cualquier otra cosa intente usarlo.
+    // Es la forma más simple y segura de manejar la inicialización.
     async void Start()
     {
-        // Espera a que Firebase esté listo
         await FirebaseApp.CheckAndFixDependenciesAsync();
 
-        // Inicializa las instancias de Firebase
         auth = FirebaseAuth.DefaultInstance;
         db = FirebaseFirestore.DefaultInstance;
 
-        // --- LÓGICA DEL AUTHINITIALIZER (AHORA AQUÍ) ---
+        // Suscribimos el listener que notificará a la UI
+        auth.StateChanged += OnAuthStateChanged;
+
+        // Comprobamos si ya había una sesión iniciada (como en tu código original)
         if (auth.CurrentUser != null)
         {
-            // ¡HAY UN USUARIO LOGUEADO!
             Debug.Log($"Usuario {auth.CurrentUser.Email} ya tiene sesión iniciada. Cargando progreso...");
+            // Asignamos el usuario y cargamos su progreso
+            CurrentUser = auth.CurrentUser;
+            await LoadPlayerProgress(CurrentUser.UserId);
 
-            // Llamamos a la función para cargar su progreso.
-            await LoadPlayerProgress(auth.CurrentUser.UserId);
+            // Notificamos a la UI que el estado ha cambiado
+            OnAuthStateChanged_Custom?.Invoke();
         }
         else
         {
-            // NO HAY NADIE LOGUEADO
             Debug.Log("No hay sesión activa. Se requiere inicio de sesión manual.");
-            // Aquí te asegurarías de que la UI de Login/Registro esté visible.
         }
     }
 
-    // --- Método para el botón de Login ---
+    // --- CORRECCIÓN 2: OnLoginButtonClicked RESTAURADO Y MEJORADO ---
+    // Recuperamos la lógica directa que funcionaba y la integramos con el nuevo sistema.
     public async void OnLoginButtonClicked()
     {
         string email = emailInputField.text;
@@ -82,29 +86,30 @@ public class FirebaseManager : MonoBehaviour
         }
 
         if (feedbackText != null) feedbackText.text = "Iniciando sesión...";
-        await LoginUserAsync(email, password);
-    }
 
-    private async Task LoginUserAsync(string email, string password)
-    {
         try
         {
+            // Hacemos el login
             var result = await auth.SignInWithEmailAndPasswordAsync(email, password);
-            FirebaseUser user = result.User;
-            Debug.Log($"¡Login exitoso! User ID: {user.UserId}");
+            CurrentUser = result.User; // Asignamos el usuario
+            Debug.Log($"¡Login exitoso! User ID: {CurrentUser.UserId}");
 
-            await LoadPlayerProgress(user.UserId);
+            // Llamamos a cargar el progreso, que también se encarga del feedback
+            await LoadPlayerProgress(CurrentUser.UserId);
         }
         catch (FirebaseException ex)
         {
-            // (Manejo de errores como antes)
+            CurrentUser = null; // Nos aseguramos de que no quede un usuario viejo
             Debug.LogError($"Error de login: {ex.Message}");
-            if (feedbackText != null) feedbackText.text = ex.Message;
+            // Mostramos el feedback de error (esto ya funcionaba bien)
+            if (feedbackText != null) feedbackText.text = GetFriendlyErrorMessage(ex);
+
+            // Notificamos a la UI que el login falló (el usuario es null)
+            OnAuthStateChanged_Custom?.Invoke();
         }
     }
 
-    // Esta función ahora es pública para poder ser llamada si es necesario desde otro lugar,
-    // pero principalmente se usa dentro de este script.
+    // --- CORRECCIÓN 3: LoadPlayerProgress RECUPERA EL FEEDBACK DE ÉXITO ---
     public async Task LoadPlayerProgress(string userId)
     {
         DocumentReference userDoc = db.Collection("users").Document(userId);
@@ -113,17 +118,59 @@ public class FirebaseManager : MonoBehaviour
         if (snapshot.Exists)
         {
             int highestLevel = snapshot.GetValue<int>("highestLevelUnlocked");
-            // CORRECCIÓN en el log para mayor claridad:
-            Debug.Log($"Progreso cargado. El nivel más alto COMPLETADO es: {highestLevel+1}");
-            if (feedbackText != null) feedbackText.text = $"¡Bienvenido de nuevo!";
+            Debug.Log($"Progreso cargado. El nivel más alto DESBLOQUEADO es: {highestLevel+1}");
 
-            // Disparamos el evento para que la UI se actualice
+            // RESTAURADO: El feedback de éxito vuelve a estar aquí.
+            if (feedbackText != null) feedbackText.text = "¡Bienvenido de nuevo!";
+
+            // RESTAURADO: Disparamos el evento para que los niveles se desbloqueen.
             OnLoginSuccess.Invoke(highestLevel);
         }
         else
         {
             Debug.LogWarning($"No se encontró documento de datos para el usuario {userId}. Usando nivel 1 por defecto.");
-            OnLoginSuccess.Invoke(1);
+            OnLoginSuccess.Invoke(0); // El nivel más alto desbloqueado es 0 (solo el 1 está disponible)
+        }
+    }
+
+    // --- OnAuthStateChanged SIMPLIFICADO ---
+    // Ahora solo se encarga de reaccionar a cambios externos, como el SignOut.
+    private void OnAuthStateChanged(object sender, EventArgs eventArgs)
+    {
+        if (auth.CurrentUser != CurrentUser)
+        {
+            CurrentUser = auth.CurrentUser;
+            Debug.Log("El estado de autenticación cambió (probablemente por SignOut). Notificando a la UI...");
+            OnAuthStateChanged_Custom?.Invoke();
+        }
+    }
+
+    // El resto de métodos no necesitan cambios
+    public void SignOut()
+    {
+        if (auth.CurrentUser != null)
+        {
+            auth.SignOut(); // Esto disparará OnAuthStateChanged, que actualizará la UI
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (auth != null)
+        {
+            auth.StateChanged -= OnAuthStateChanged;
+        }
+    }
+
+    private string GetFriendlyErrorMessage(FirebaseException ex)
+    {
+        AuthError errorCode = (AuthError)ex.ErrorCode;
+        switch (errorCode)
+        {
+            case AuthError.WrongPassword: return "La contraseña es incorrecta.";
+            case AuthError.UserNotFound: return "No se encontró un usuario con ese email.";
+            case AuthError.InvalidEmail: return "El formato del email no es válido.";
+            default: return "Error al iniciar sesión. Inténtalo de nuevo.";
         }
     }
 }

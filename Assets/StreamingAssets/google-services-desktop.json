@@ -1,14 +1,14 @@
 {
   "project_info": {
-    "project_number": "374995625193",
-    "firebase_url": "https://lab9arielmoviles-default-rtdb.firebaseio.com",
-    "project_id": "lab9arielmoviles",
-    "storage_bucket": "lab9arielmoviles.firebasestorage.app"
+    "project_number": "1066634593184",
+    "firebase_url": "https://andesbirds-database-default-rtdb.firebaseio.com",
+    "project_id": "andesbirds-database",
+    "storage_bucket": "andesbirds-database.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:374995625193:android:b3ab351010931bb3703c78",
+        "mobilesdk_app_id": "1:1066634593184:android:02314e8933611d7667dac5",
         "android_client_info": {
           "package_name": "com.AndesBirds.AndesBirds"
         }
@@ -16,26 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBjOhcM2_L5YoswK1lfrlBsgudEWPX2aJI"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:374995625193:android:5b5f51911f65dec7703c78",
-        "android_client_info": {
-          "package_name": "com.CarrolloAriel.Lab9Moviles"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBjOhcM2_L5YoswK1lfrlBsgudEWPX2aJI"
+          "current_key": "AIzaSyA24jEKFG_sMAJDi0hUX91XjUK0kkYgK00"
         }
       ],
       "services": {
