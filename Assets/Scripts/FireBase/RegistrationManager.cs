@@ -90,7 +90,7 @@ public class RegistrationManager : MonoBehaviour
         // Definimos los datos iniciales. El nivel 1 es el primero desbloqueado.
         var initialData = new
         {
-            highestLevelUnlocked = 1,
+            highestLevelUnlocked = 0,
             email = emailInputField.text // También puedes guardar el email si lo deseas
         };
 

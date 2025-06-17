@@ -40,7 +40,11 @@ public class Slingshot : MonoBehaviour
 
     private Collider objectCollider;
     private CameraFollowProjectile cameraFollowScript;
+    [Tooltip("Referencia al script que visualiza la trayectoria.")]
+    public TrajectoryPredictor trajectoryPredictor;
 
+    [Tooltip("Multiplicador para ajustar la predicción de la trayectoria si no coincide con el lanzamiento real.")]
+    public float trajectoryPredictionMultiplier = 1.0f;
     void Start()
     {
         if (glideButton != null) glideButton.gameObject.SetActive(false);
@@ -98,25 +102,26 @@ public class Slingshot : MonoBehaviour
 
         if (currentProjectile == null || currentProjectileRb == null || !currentProjectileRb.isKinematic)
         {
-            if (isDragging) isDragging = false;
+            if (isDragging)
+            {
+                isDragging = false;
+                if (trajectoryPredictor != null) trajectoryPredictor.Hide();
+            }
             return;
         }
 
         if (primaryInputStartedThisFrame && !isDragging && !EventSystem.current.IsPointerOverGameObject())
         {
-            if (currentProjectile != null && currentProjectileRb.isKinematic)
+            Ray ray = Camera.main.ScreenPointToRay(currentInputScreenPosition);
+            RaycastHit hit;
+
+            if (Physics.Raycast(ray, out hit, 100f))
             {
-                Ray ray = Camera.main.ScreenPointToRay(currentInputScreenPosition);
-                RaycastHit hit;
-
-                if (Physics.Raycast(ray, out hit, 100f)) 
+                Collider projectileCollider = currentProjectile.GetComponent<Collider>();
+                if (hit.collider == objectCollider || (projectileCollider != null && hit.collider == projectileCollider))
                 {
-                    Collider projectileCollider = currentProjectile.GetComponent<Collider>();
-                    if (hit.collider == objectCollider || (projectileCollider != null && hit.collider == projectileCollider))
-                    {
+                    isDragging = true;
 
-                        isDragging = true;
-                    }
                 }
             }
         }
@@ -124,15 +129,25 @@ public class Slingshot : MonoBehaviour
         if (isDragging && primaryInputIsHeld)
         {
             DragCurrentProjectile(currentInputScreenPosition);
+
+            if (trajectoryPredictor != null)
+            {
+                Vector3 launchDirection = anchorPoint.position - currentProjectile.transform.position;
+                float stretchAmount = launchDirection.magnitude;
+                Vector3 launchForce = launchDirection.normalized * stretchAmount * launchForceMultiplier;
+                Vector3 initialVelocity = (launchForce / currentProjectileRb.mass) * Time.fixedDeltaTime * trajectoryPredictionMultiplier;
+
+                trajectoryPredictor.UpdateTrajectory(currentProjectile.transform.position, initialVelocity);
+            }
         }
 
         if (isDragging && !primaryInputIsHeld)
         {
             isDragging = false;
+            if (trajectoryPredictor != null) trajectoryPredictor.Hide();
             ReleaseCurrentProjectile();
         }
     }
-
     void ReleaseCurrentProjectile()
     {
         if (currentProjectileRb == null) return;
@@ -180,6 +195,7 @@ public class Slingshot : MonoBehaviour
         currentProjectileRb = null;
 
         currentProjectileTypeIndex = (currentProjectileTypeIndex + 1) % projectilePrefabs_TypeSequence.Length;
+        if (trajectoryPredictor != null) trajectoryPredictor.Hide();
     }
 
     public void RequestNextProjectile()
