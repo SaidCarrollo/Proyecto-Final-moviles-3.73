@@ -127,8 +127,6 @@ public class Projectile : MonoBehaviour
     }
 
 
-    // En Projectile.cs
-
     protected virtual void Update()
     {
         if (isLaunched && !powerActivated && powerRequiresTap)
@@ -159,7 +157,7 @@ public class Projectile : MonoBehaviour
     }
     protected virtual void OnCollisionEnter(Collision collision)
     {
-        if (!isLaunched || isPendingDespawn) return;
+        if (!isLaunched ) return;
         StructureBlock block = collision.gameObject.GetComponent<StructureBlock>();
         if (block != null)
         {
@@ -219,9 +217,8 @@ public class Projectile : MonoBehaviour
                 break;
         }
 
-        if (shouldStartDespawn)
+        if (shouldStartDespawn && !isPendingDespawn)
         {
-            isPendingDespawn = true;
             StartCoroutine(StartDespawnTimer());
         }
     }
@@ -276,12 +273,11 @@ public class Projectile : MonoBehaviour
 
     private IEnumerator StartDespawnTimer()
     {
+        isPendingDespawn = true;
         yield return new WaitForSeconds(lifeTimeAfterCollision);
         if (this != null)
         {
-
             Despawn();
-
         }
     }
     public void ResetProjectileState()

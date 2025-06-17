@@ -1,5 +1,5 @@
 using UnityEngine;
-using System.Collections; // Necesario para la corutina
+using System.Collections; 
 
 public class GameManager : SingletonNonPersistent<GameManager>
 {
@@ -8,7 +8,7 @@ public class GameManager : SingletonNonPersistent<GameManager>
 
     private int enemiesRemaining;
     private bool isGameOver = false;
-
+    public GameObject PanelGameover;
     void Start()
     {
         enemiesRemaining = FindObjectsOfType<Enemy>().Length;
@@ -63,6 +63,7 @@ public class GameManager : SingletonNonPersistent<GameManager>
         if (isGameOver) return;
         isGameOver = true;
         Debug.Log("¡PERDISTE! Te quedaste sin aves.");
-        OnGameLost?.Invoke(); 
+        OnGameLost?.Invoke();
+        PanelGameover.SetActive(true);
     }
 }

@@ -9,11 +9,17 @@ EditorBuildSettings:
     path: Assets/Scenes/Cargando.unity
     guid: 495a1839ece1b02498ca85fde6229ef8
   - enabled: 1
+    path: Assets/Scenes/Menu.unity
+    guid: 6eec4b5bd205f9041b3f14bba3ff752b
+  - enabled: 1
+    path: Assets/Scenes/Levels.unity
+    guid: 6e6d7b80159651d429c9718a76c83fa1
+  - enabled: 0
     path: Assets/Scenes/Gameplay respaldo.unity
     guid: f624f3bb38ad9ed45b2d5d98087fd758
   - enabled: 1
-    path: Assets/Scenes/Menu.unity
-    guid: 6eec4b5bd205f9041b3f14bba3ff752b
+    path: Assets/Scenes/Gameplay.unity
+    guid: 7ce43b62433377145ac6e47eb1e12900
   - enabled: 1
     path: Assets/Scenes/Registro.unity
     guid: 7c07e9554c72a7648b794c0bb1ed1db7

@@ -101,11 +101,23 @@ public class Slingshot : MonoBehaviour
             if (isDragging) isDragging = false;
             return;
         }
+
         if (primaryInputStartedThisFrame && !isDragging && !EventSystem.current.IsPointerOverGameObject())
         {
             if (currentProjectile != null && currentProjectileRb.isKinematic)
             {
-                isDragging = true;
+                Ray ray = Camera.main.ScreenPointToRay(currentInputScreenPosition);
+                RaycastHit hit;
+
+                if (Physics.Raycast(ray, out hit, 100f)) 
+                {
+                    Collider projectileCollider = currentProjectile.GetComponent<Collider>();
+                    if (hit.collider == objectCollider || (projectileCollider != null && hit.collider == projectileCollider))
+                    {
+
+                        isDragging = true;
+                    }
+                }
             }
         }
 
