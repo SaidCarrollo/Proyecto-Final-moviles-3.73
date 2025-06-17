@@ -268,7 +268,7 @@ MonoBehaviour:
   speedBoostMultiplier: 1.5
   maxPierces: 1
   bombPrefab: {fileID: 4742981509162198835, guid: 96102bdfcc49822469c4cf860767bd46, type: 3}
-  upwardForceOnDrop: 5
+  upwardForceOnDrop: 15
   lifeTimeAfterCollision: 5
   homingSpeed: 30
   homingTargetLayers:

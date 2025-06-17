@@ -277,7 +277,7 @@ MonoBehaviour:
   baseDamage: 25
   damageModifiers:
   - targetMaterial: 0
-    damageMultiplier: 5
+    damageMultiplier: 10
   - targetMaterial: 2
     damageMultiplier: 1
   - targetMaterial: 1
