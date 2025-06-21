@@ -1031,10 +1031,11 @@ MonoBehaviour:
   panSpeed: 20
   panBoundsX: {x: -10, y: 50}
   panBoundsY: {x: 0, y: 20}
+  slingshot: {fileID: 1945294344}
   zoomSpeed: 2
   minZoom: -15
   maxZoom: -40
-  slingshotTransform: {fileID: 2068858728}
+  slingshotTransform: {fileID: 1945294345}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -5026,11 +5027,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &2068858728 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 343e09ae6a611c347809db755befbd5c, type: 3}
-  m_PrefabInstance: {fileID: 2141284099}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2082131723
 PrefabInstance:
   m_ObjectHideFlags: 0

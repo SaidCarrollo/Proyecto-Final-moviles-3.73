@@ -15,7 +15,8 @@ public class ProjectileSpriteManager : MonoBehaviour
 
     [Tooltip("Sprite que se mostrará al impactar.")]
     public Sprite crashSprite;
-
+    private Rigidbody rb;
+    private Vector3 initialScale;
     void Awake()
     {
         if (spriteRenderer == null)
@@ -29,10 +30,35 @@ public class ProjectileSpriteManager : MonoBehaviour
                 return;
             }
         }
-        // Establecemos el sprite inicial al arrancar.
+        rb = GetComponentInParent<Rigidbody>();
+        if (rb == null)
+        {
+            Debug.LogError("ERROR: ProjectileSpriteManager no pudo encontrar un Rigidbody en el objeto padre.", this);
+            this.enabled = false;
+            return;
+        }
+        initialScale = transform.localScale;
         SetIdleSprite();
     }
+     void FixedUpdate()
+    {
+        // Solo ajustamos la orientación si el proyectil se está moviendo.
+        if (rb != null && rb.linearVelocity.sqrMagnitude > 0.1f)
+        {
+            float horizontalVelocity = rb.linearVelocity.x;
 
+            // Si la velocidad horizontal es negativa (moviéndose a la izquierda), invertimos la escala en X.
+            if (horizontalVelocity < -0.1f)
+            {
+                transform.localScale = new Vector3(-initialScale.x, initialScale.y, initialScale.z);
+            }
+            // Si es positiva, usamos la escala normal.
+            else if (horizontalVelocity > 0.1f)
+            {
+                transform.localScale = new Vector3(initialScale.x, initialScale.y, initialScale.z);
+            }
+        }
+    }
 
     public void SetIdleSprite()
     {

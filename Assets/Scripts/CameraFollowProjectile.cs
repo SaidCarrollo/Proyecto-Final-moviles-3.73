@@ -22,7 +22,7 @@ public class CameraFollowProjectile : MonoBehaviour
     public Vector2 panBoundsY = new Vector2(0f, 20f);
     private Vector3 lastPanPosition;
     private bool isPanning = false;
-    private Slingshot slingshot; 
+    [SerializeField] Slingshot slingshot; 
 
     [Header("Configuración de Zoom")]
     public float zoomSpeed = 2f;
@@ -37,7 +37,6 @@ public class CameraFollowProjectile : MonoBehaviour
     void Awake()
     {
         initialRotation = transform.rotation;
-        slingshot = FindObjectOfType<Slingshot>();
     }
 
     void Update()
@@ -73,7 +72,7 @@ public class CameraFollowProjectile : MonoBehaviour
         if (slingshot != null && slingshot.isDragging)
         {
             isPanning = false;
-            return; 
+            return;
         }
         if (EventSystem.current.IsPointerOverGameObject())
         {

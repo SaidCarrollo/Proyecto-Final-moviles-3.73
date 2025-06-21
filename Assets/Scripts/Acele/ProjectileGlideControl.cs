@@ -105,7 +105,7 @@ public class ProjectileGlideControl : MonoBehaviour
         rb.AddForce(dragForce);
         rb.AddForce(thrustForce);
 
-        float visualAngle = Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg;
+        float visualAngle = Mathf.Atan2(velocity.y, Mathf.Abs(velocity.x)) * Mathf.Rad2Deg;
         Quaternion targetRotation = Quaternion.Euler(0, 0, visualAngle - 90);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSmoothness * Time.fixedDeltaTime);
 

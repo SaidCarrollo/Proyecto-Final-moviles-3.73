@@ -1031,6 +1031,7 @@ MonoBehaviour:
   panSpeed: 20
   panBoundsX: {x: -10, y: 50}
   panBoundsY: {x: 0, y: 20}
+  slingshot: {fileID: 1945294344}
   zoomSpeed: 2
   minZoom: -15
   maxZoom: -40
