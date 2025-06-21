@@ -28,7 +28,7 @@ public class Slingshot : MonoBehaviour
     public Button glideButton;
     public Button despawnButton;
 
-    private bool isDragging = false;
+    public bool isDragging { get; private set; } = false;
     private bool primaryInputStartedThisFrame = false;
     private bool primaryInputIsHeld = false;
     private Vector2 currentInputScreenPosition;
@@ -83,7 +83,7 @@ public class Slingshot : MonoBehaviour
                 cameraFollowScript = Camera.main.gameObject.AddComponent<CameraFollowProjectile>();
             }
             cameraFollowScript.slingshotTransform = this.transform;
-            cameraFollowScript.FocusOnSlingshot();
+            cameraFollowScript.ResetToSlingshotView();
         }
         else
         {
@@ -206,7 +206,7 @@ public class Slingshot : MonoBehaviour
 
         if (cameraFollowScript != null)
         {
-            cameraFollowScript.FocusOnSlingshot();
+            cameraFollowScript.ResetToSlingshotView();
         }
 
         if (projectilesRemaining_TotalLaunches > 0)
