@@ -256,7 +256,7 @@ MonoBehaviour:
   powerType: 5
   powerRequiresTap: 1
   effectOnActivatePrefab: {fileID: 0}
-  soundOnActivate: {fileID: 0}
+  soundOnActivate: {fileID: 8300000, guid: 1790fc9cd1dada349932f8de8146f446, type: 3}
   explosionRadius: 2
   explosionForce: 500
   explodableLayers:

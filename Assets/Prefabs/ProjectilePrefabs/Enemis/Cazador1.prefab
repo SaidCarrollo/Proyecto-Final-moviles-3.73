@@ -238,6 +238,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 5
+  minDamageVelocity: 3
+  fallDamageMultiplier: 1.5
   destructionEffectPrefab: {fileID: 0}
   impactSound: {fileID: 0}
-  destructionSound: {fileID: 0}
+  destructionSound: {fileID: 8300000, guid: cd358ab10d3a0a5409f01c6fee88d7c1, type: 3}

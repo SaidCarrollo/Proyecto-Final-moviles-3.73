@@ -1344,6 +1344,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cazador (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 3173661309963271186, guid: b298137729ec0534e97ff534e52c876e, type: 3}
+      propertyPath: destructionSound
+      value: 
+      objectReference: {fileID: 8300000, guid: cd358ab10d3a0a5409f01c6fee88d7c1, type: 3}
     - target: {fileID: 6519652426637405999, guid: b298137729ec0534e97ff534e52c876e, type: 3}
       propertyPath: m_Constraints
       value: 72
@@ -3845,6 +3849,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cazador
       objectReference: {fileID: 0}
+    - target: {fileID: 3173661309963271186, guid: b298137729ec0534e97ff534e52c876e, type: 3}
+      propertyPath: destructionSound
+      value: 
+      objectReference: {fileID: 8300000, guid: cd358ab10d3a0a5409f01c6fee88d7c1, type: 3}
     - target: {fileID: 6519652426637405999, guid: b298137729ec0534e97ff534e52c876e, type: 3}
       propertyPath: m_Constraints
       value: 72
@@ -5049,6 +5057,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Cazador (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 3173661309963271186, guid: b298137729ec0534e97ff534e52c876e, type: 3}
+      propertyPath: destructionSound
+      value: 
+      objectReference: {fileID: 8300000, guid: cd358ab10d3a0a5409f01c6fee88d7c1, type: 3}
     - target: {fileID: 6519652426637405999, guid: b298137729ec0534e97ff534e52c876e, type: 3}
       propertyPath: m_Constraints
       value: 72

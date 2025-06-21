@@ -152,5 +152,5 @@ MonoBehaviour:
   materialType: 2
   maxHealth: 100
   destructionEffectPrefab: {fileID: 0}
-  impactSound: {fileID: 0}
-  destructionSound: {fileID: 0}
+  impactSound: {fileID: 8300000, guid: fe612500c8bb649448f111edb08c4bde, type: 3}
+  destructionSound: {fileID: 8300000, guid: 726cc9c1bfd416345a9f8f35449f574c, type: 3}
