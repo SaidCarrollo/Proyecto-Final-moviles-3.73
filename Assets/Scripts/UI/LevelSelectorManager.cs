@@ -1,46 +1,73 @@
 using UnityEngine;
 using UnityEngine.UI;
+
 public class LevelSelectorManager : MonoBehaviour
 {
-// CAMBIO 1: Ahora el array es de tipo 'Image' en lugar de 'GameObject'.
-    // Esto es más eficiente y seguro, ya que nos aseguramos de que cada elemento tiene un componente Image.
+    [Header("Event Channels")]
+    [SerializeField] private ProgressEventChannelSO onProgressUpdated;
+
     [Tooltip("Arrastra aquí los componentes 'Image' de los paneles que bloquean cada nivel.")]
-    public Image[] levelBlockers; 
+    public Image[] levelBlockers;
 
-    // CAMBIO 2: Añadimos un color público para definir cómo se ven los niveles bloqueados.
     [Tooltip("Elige el color y la transparencia que tendrán los niveles bloqueados.")]
-    public Color lockedColor = new Color(0f, 0f, 0f, 0.5f); // Negro semitransparente por defecto
+    public Color lockedColor = new Color(0f, 0f, 0f, 0.5f);
 
-    // Esta función, como antes, es llamada por el evento OnLoginSuccess del LoginManager
+    void OnEnable()
+    {
+        // Nos seguimos suscribiendo al cambio de estado, ya que es nuestra señal para refrescar.
+        if (onProgressUpdated != null) onProgressUpdated.OnEventRaised += UpdateLevelVisibility;
+
+        // Forzamos una actualización inicial
+        UpdateLevelVisibility();
+    }
+
+    void OnDisable()
+    {
+        if (onProgressUpdated != null) onProgressUpdated.OnEventRaised -= UpdateLevelVisibility;
+    }
+
+    /// <summary>
+    /// Se llama cada vez que el estado de autenticación cambie.
+    /// Su única misión es pedir el estado de progreso actual al ProgressManager.
+    /// </summary>
+    private void UpdateLevelVisibility()
+    {
+        if (ProgressManager.Instance != null)
+        {
+            int progress = ProgressManager.Instance.CurrentHighestLevel;
+            UnlockLevels(progress);
+        }
+        else
+        {
+            UnlockLevels(-1);
+        }
+    }
+
     public void UnlockLevels(int highestLevelUnlocked)
     {
-        Debug.Log($"Actualizando UI de niveles. Nivel más alto alcanzado: {highestLevelUnlocked+1}");
+        // He notado que en tu código anterior, en el 'else' de HandleAuthStateChanged,
+        // llamabas a UnlockLevels(0). Esto desbloquearía el nivel 0. 
+        // El valor correcto para bloquear todo es -1.
 
-        // El bucle sigue la misma lógica
+        if (levelBlockers == null) return;
+
+        Debug.Log($"Actualizando UI de niveles. Nivel más alto actual: {highestLevelUnlocked}");
+
         for (int i = 0; i < levelBlockers.Length; i++)
         {
-            Image blockerImage = levelBlockers[i]; // Obtenemos la imagen del panel
-            int levelToCheck = i; // El nivel que este panel está bloqueando
+            if (levelBlockers[i] == null) continue;
+
+            Image blockerImage = levelBlockers[i];
+            int levelToCheck = i;
 
             if (levelToCheck <= highestLevelUnlocked)
             {
-                // --- Nivel DESBLOQUEADO ---
-
-                // 1. Hacemos que NO bloquee los clics/taps del mouse o dedo.
                 blockerImage.raycastTarget = false;
-
-                // 2. Lo hacemos completamente transparente y de color blanco.
-                // La transparencia se controla con el cuarto valor (alpha).
-                blockerImage.color = new Color(1f, 1f, 1f, 0f); 
+                blockerImage.color = Color.clear;
             }
             else
             {
-                // --- Nivel BLOQUEADO ---
-
-                // 1. Hacemos que SÍ bloquee los clics/taps.
                 blockerImage.raycastTarget = true;
-
-                // 2. Le ponemos el color de bloqueo que definimos en el Inspector.
                 blockerImage.color = lockedColor;
             }
         }

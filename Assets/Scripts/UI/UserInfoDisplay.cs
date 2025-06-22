@@ -12,24 +12,29 @@ public class UserInfoDisplay : MonoBehaviour
         textComponent = GetComponent<TMP_Text>();
     }
 
+    // --- MÉTODO OnEnable MODIFICADO ---
     void OnEnable()
     {
-        // Nos suscribimos a nuestro evento personalizado
+        // Siempre nos suscribimos para reaccionar a futuros cambios (como logout).
         FirebaseManager.OnAuthStateChanged_Custom += UpdateUserInfo;
-        // Actualizamos la UI en cuanto se activa
-        UpdateUserInfo();
+
+        // Y le pedimos al Manager que nos envíe el estado actual.
+        if (FirebaseManager.Instance != null)
+        {
+            FirebaseManager.Instance.RequestUIUpdate();
+        }
     }
 
     void OnDisable()
     {
-        // Nos desuscribimos para evitar errores
+        // Siempre nos desuscribimos.
         FirebaseManager.OnAuthStateChanged_Custom -= UpdateUserInfo;
     }
 
-    // Este método ya no necesita los argumentos 'sender' y 'e'
+
     private void UpdateUserInfo()
     {
-        // La lógica de comprobación ahora es más simple y fiable
+        // La lógica interna de este método ya era correcta.
         if (FirebaseManager.Instance != null && FirebaseManager.Instance.CurrentUser != null)
         {
             var user = FirebaseManager.Instance.CurrentUser;
