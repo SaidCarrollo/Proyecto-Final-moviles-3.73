@@ -55,6 +55,27 @@ public class GameManager : SingletonNonPersistent<GameManager>
         if (isGameOver) return;
         isGameOver = true;
         Debug.Log("¡GANASTE EL NIVEL!");
+        Slingshot slingshot = FindObjectOfType<Slingshot>();
+        if (slingshot != null)
+        {
+            int projectilesSpared = slingshot.projectilesRemaining_TotalLaunches;
+            int stars = 1; 
+
+            if (projectilesSpared >= 2)
+            {
+                stars = 3;
+            }
+            else if (projectilesSpared == 1)
+            {
+                stars = 2;
+            }
+
+            Debug.Log($"Proyectiles de sobra: {projectilesSpared}. Estrellas obtenidas: {stars} / 3");
+        }
+        else
+        {
+            Debug.LogWarning("No se pudo encontrar el Slingshot en la escena para calcular las estrellas.");
+        }
         OnGameWon?.Invoke(); 
     }
 

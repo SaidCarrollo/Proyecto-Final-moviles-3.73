@@ -41,7 +41,7 @@ public class Slingshot : MonoBehaviour
     private GameObject currentProjectile;
     private Rigidbody currentProjectileRb;
     private Projectile currentLaunchedProjectile;
-    private int projectilesRemaining_TotalLaunches;
+    public int projectilesRemaining_TotalLaunches { get; private set; }
 
     private Collider objectCollider;
     private CameraFollowProjectile cameraFollowScript;
