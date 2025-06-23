@@ -27,7 +27,12 @@ public class Slingshot : MonoBehaviour
     [Header("Referencias de UI")]
     public Button glideButton;
     public Button despawnButton;
-
+    [Tooltip("Sonido que se reproduce al empezar a arrastrar el proyectil.")]
+    public AudioClip onDragStartSound;
+    [Tooltip("Sonido que se reproduce continuamente mientras se arrastra.")]
+    public AudioClip onDraggingSound;
+    [Tooltip("Sonido que se reproduce al lanzar el proyectil.")]
+    public AudioClip onLaunchSound;
     public bool isDragging { get; private set; } = false;
     private bool primaryInputStartedThisFrame = false;
     private bool primaryInputIsHeld = false;
@@ -45,6 +50,13 @@ public class Slingshot : MonoBehaviour
 
     [Tooltip("Multiplicador para ajustar la predicción de la trayectoria si no coincide con el lanzamiento real.")]
     public float trajectoryPredictionMultiplier = 1.0f;
+
+    private AudioSource audioSource;
+    private void Awake()
+    {
+        audioSource = GetComponent<AudioSource>();
+        audioSource.playOnAwake = false; 
+    }
     void Start()
     {
         if (glideButton != null) glideButton.gameObject.SetActive(false);
@@ -106,6 +118,10 @@ public class Slingshot : MonoBehaviour
             {
                 isDragging = false;
                 if (trajectoryPredictor != null) trajectoryPredictor.Hide();
+                if (audioSource.isPlaying)
+                {
+                    audioSource.Stop();
+                }
             }
             return;
         }
@@ -122,6 +138,17 @@ public class Slingshot : MonoBehaviour
                 {
                     isDragging = true;
 
+                    if (onDraggingSound != null)
+                    {
+                        audioSource.clip = onDraggingSound;
+                        audioSource.loop = true;
+                        audioSource.Play();
+                    }
+
+                    if (onDragStartSound != null)
+                    {
+                        audioSource.PlayOneShot(onDragStartSound);
+                    }
                 }
             }
         }
@@ -129,14 +156,12 @@ public class Slingshot : MonoBehaviour
         if (isDragging && primaryInputIsHeld)
         {
             DragCurrentProjectile(currentInputScreenPosition);
-
             if (trajectoryPredictor != null)
             {
                 Vector3 launchDirection = anchorPoint.position - currentProjectile.transform.position;
                 float stretchAmount = launchDirection.magnitude;
                 Vector3 launchForce = launchDirection.normalized * stretchAmount * launchForceMultiplier;
                 Vector3 initialVelocity = (launchForce / currentProjectileRb.mass) * Time.fixedDeltaTime * trajectoryPredictionMultiplier;
-
                 trajectoryPredictor.UpdateTrajectory(currentProjectile.transform.position, initialVelocity);
             }
         }
@@ -145,12 +170,24 @@ public class Slingshot : MonoBehaviour
         {
             isDragging = false;
             if (trajectoryPredictor != null) trajectoryPredictor.Hide();
+
+            if (audioSource.isPlaying)
+            {
+                audioSource.Stop();
+            }
+
             ReleaseCurrentProjectile();
         }
     }
+
     void ReleaseCurrentProjectile()
     {
         if (currentProjectileRb == null) return;
+
+        if (onLaunchSound != null)
+        {
+            audioSource.PlayOneShot(onLaunchSound);
+        }
 
         GameObject projectileToLaunch = currentProjectile;
         Rigidbody projectileRbToLaunch = currentProjectileRb;
@@ -180,10 +217,6 @@ public class Slingshot : MonoBehaviour
             {
                 despawnButton.gameObject.SetActive(true);
             }
-        }
-        else
-        {
-            Debug.LogWarning("El proyectil lanzado no tiene un script 'Projectile.cs'.");
         }
 
         if (cameraFollowScript != null)
@@ -216,8 +249,6 @@ public class Slingshot : MonoBehaviour
         else
         {
             GameManager.Instance.NotifyOutOfProjectiles();
-            Debug.Log("Todos los proyectiles han sido lanzados.");
-            Debug.Log("Todos los proyectiles han sido lanzados.");
             UpdateBandsVisuals();
         }
     }
@@ -295,7 +326,6 @@ public class Slingshot : MonoBehaviour
 
             if (currentProjectile == null)
             {
-                Debug.LogError("No se pudo obtener el proyectil del pool. Revisa que el tag coincida con el nombre del prefab.");
                 return;
             }
             currentProjectile.name = prefabToSpawn.name + "_Launch_" + (totalProjectiles - projectilesRemaining_TotalLaunches + 1);
@@ -303,24 +333,22 @@ public class Slingshot : MonoBehaviour
             currentProjectileRb = currentProjectile.GetComponent<Rigidbody>();
             if (currentProjectileRb == null)
             {
-                Debug.LogError("¡El prefab del proyectil '" + prefabToSpawn.name + "' no tiene Rigidbody! No se puede preparar.", this);
-                currentProjectile.SetActive(false); 
+                currentProjectile.SetActive(false);
                 enabled = false;
                 return;
             }
 
             currentProjectileRb.isKinematic = true;
-
             projectilesRemaining_TotalLaunches--;
         }
         else
         {
             currentProjectile = null;
             currentProjectileRb = null;
-            Debug.Log("No quedan más lanzamientos.");
         }
         UpdateBandsVisuals();
     }
+
     void DragCurrentProjectile(Vector2 screenPosition)
     {
         if (currentProjectile == null) return;
@@ -344,7 +372,6 @@ public class Slingshot : MonoBehaviour
         bandRight.enabled = showBands;
         if (showBands)
         {
-
             bandLeft.SetPosition(0, anchorPoint.position);
             bandLeft.SetPosition(1, currentProjectile.transform.position);
             bandRight.SetPosition(0, anchorPoint.position);
@@ -370,7 +397,6 @@ public class Slingshot : MonoBehaviour
                 worldPoint.z = anchorPoint.position.z;
                 return worldPoint;
             }
-            Debug.LogWarning("El rayo del input no intersectó el plano de juego. Usando profundidad de fallback.");
             return cameraRay.GetPoint(Vector3.Distance(Camera.main.transform.position, anchorPoint.position));
         }
     }

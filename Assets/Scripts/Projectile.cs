@@ -19,6 +19,9 @@ public class Projectile : MonoBehaviour
     public GameObject effectOnActivatePrefab;
     public AudioClip soundOnActivate;
 
+    [Header("Sonidos del Proyectil")]
+    public AudioClip collisionSound;
+    public AudioClip despawnSound;
     [Header("Parametros Especificos del Poder")]
     public float explosionRadius = 2f;
     public float explosionForce = 500f;
@@ -83,13 +86,6 @@ public class Projectile : MonoBehaviour
         {
             glideButton = glideButtonObject.GetComponent<Button>();
             glideButton.gameObject.SetActive(false);
-        }
-        else
-        {
-            if (glideControl != null)
-            {
-                // Debug.LogWarning("No se encontr� un GameObject con el nombre 'GlideButton' en la escena.", this);
-            }
         }
     }
 
@@ -157,12 +153,17 @@ public class Projectile : MonoBehaviour
     }
     protected virtual void OnCollisionEnter(Collision collision)
     {
-        if (!isLaunched ) return;
+        if (!isLaunched || isPendingDespawn) return;
+
+        if (audioSource != null && collisionSound != null)
+        {
+            audioSource.PlayOneShot(collisionSound);
+        }
+
         StructureBlock block = collision.gameObject.GetComponent<StructureBlock>();
         if (block != null)
         {
             float damageMultiplier = 1f;
-
             foreach (var modifier in damageModifiers)
             {
                 if (modifier.targetMaterial == block.materialType)
@@ -171,24 +172,24 @@ public class Projectile : MonoBehaviour
                     break;
                 }
             }
-
             float impactVelocity = collision.relativeVelocity.magnitude;
-            float finalDamage = baseDamage * damageMultiplier * (impactVelocity / 10f); 
-
-            block.TakeDamage(finalDamage, MaterialType.Totora); 
+            float finalDamage = baseDamage * damageMultiplier * (impactVelocity / 10f);
+            block.TakeDamage(finalDamage, MaterialType.Totora);
         }
+
         Enemy enemy = collision.gameObject.GetComponent<Enemy>();
         if (enemy != null)
         {
             float impactVelocity = collision.relativeVelocity.magnitude;
-            float damageToEnemy = baseDamage * (impactVelocity / 5f); 
-
+            float damageToEnemy = baseDamage * (impactVelocity / 5f);
             enemy.TakeDamage(damageToEnemy);
         }
+
         if (spriteManager != null)
         {
             spriteManager.SetCrashSprite();
         }
+
         DeactivateGlideIfNeeded();
 
         bool shouldStartDespawn = true;
@@ -212,12 +213,11 @@ public class Projectile : MonoBehaviour
             case ProjectilePowerType.SplitOnTap:
             case ProjectilePowerType.SpeedBoostOnTap:
             case ProjectilePowerType.Normal:
-
             default:
                 break;
         }
 
-        if (shouldStartDespawn && !isPendingDespawn)
+        if (shouldStartDespawn)
         {
             StartCoroutine(StartDespawnTimer());
         }
@@ -275,11 +275,12 @@ public class Projectile : MonoBehaviour
     {
         isPendingDespawn = true;
         yield return new WaitForSeconds(lifeTimeAfterCollision);
-        if (this != null)
+        if (this != null && this.gameObject.activeInHierarchy)
         {
             Despawn();
         }
     }
+
     public void ResetProjectileState()
     {
         isLaunched = false;
@@ -297,7 +298,7 @@ public class Projectile : MonoBehaviour
         DeactivateGlideIfNeeded();
         if (spriteManager != null)
         {
-            spriteManager.SetIdleSprite(); 
+            spriteManager.SetIdleSprite();
         }
 
         StopAllCoroutines();
@@ -306,6 +307,12 @@ public class Projectile : MonoBehaviour
     public void Despawn()
     {
         if (!this.enabled || !gameObject.activeSelf) return;
+
+        if (despawnSound != null)
+        {
+            AudioSource.PlayClipAtPoint(despawnSound, transform.position);
+        }
+
         StopAllCoroutines();
         NotifySlingshotToPrepareNext();
         this.enabled = false;
@@ -392,7 +399,6 @@ public class Projectile : MonoBehaviour
         }
         else
         {
-
             powerActivated = true;
         }
     }
@@ -435,7 +441,6 @@ public class Projectile : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, 200f, homingTargetLayers))
         {
-
             targetPoint = hit.point;
         }
         else

@@ -56,7 +56,13 @@ public class CameraFollowProjectile : MonoBehaviour
         if (target != null && isFollowingProjectile)
         {
             Vector3 desiredPosition = new Vector3(target.position.x + offset.x, target.position.y + offset.y, fixedZPosition);
-            transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
+
+            Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
+
+            smoothedPosition.x = Mathf.Clamp(smoothedPosition.x, panBoundsX.x, panBoundsX.y);
+            smoothedPosition.y = Mathf.Clamp(smoothedPosition.y, panBoundsY.x, panBoundsY.y);
+
+            transform.position = smoothedPosition;
             transform.rotation = initialRotation;
         }
     }

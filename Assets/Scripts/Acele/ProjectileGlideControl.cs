@@ -1,23 +1,18 @@
 using UnityEngine;
 
+[RequireComponent(typeof(AudioSource))]
 public class ProjectileGlideControl : MonoBehaviour
 {
     [Header("Energy & Glide Physics")]
-    [Tooltip("Multiplicador principal de la sustentación. Qué tan 'flotador' es el proyectil.")]
     public float liftMultiplier = 0.5f;
-    [Tooltip("Arrastre base del proyectil, simplemente por moverse en el aire.")]
     public float parasiticDrag = 0.1f;
-    [Tooltip("Arrastre EXTRA que se genera al 'tirar hacia arriba' para generar sustentación. Clave para el realismo.")]
     public float inducedDrag = 1.5f;
 
     [Header("Control")]
-    [Tooltip("Sensibilidad del acelerómetro para controlar el ángulo de ataque.")]
     public float controlSensitivity = 1.0f;
-    [Tooltip("Fuerza de empuje adicional al picar para ganar velocidad. 0 para desactivar.")]
     public float diveThrust = 2.0f;
 
     [Header("Dive Recovery")]
-    [Tooltip("Bono de sustentación al recuperarse de una picada. >1 para un efecto notable.")]
     public float diveRecoveryBonus = 1.5f;
 
     [Header("2.5D Constraints")]
@@ -31,19 +26,24 @@ public class ProjectileGlideControl : MonoBehaviour
     [Header("Visual Rotation")]
     public float rotationSmoothness = 5f;
 
+    [Header("Sonidos")]
+    public AudioClip onGlideActivateSound;
+
     private Rigidbody rb;
     private bool isGliding = false;
     private ProjectileSpriteManager spriteManager;
     private float previousYVelocity = 0f;
     public bool IsGliding => isGliding;
+    private AudioSource audioSource;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
         spriteManager = GetComponent<ProjectileSpriteManager>();
+        audioSource = GetComponent<AudioSource>();
+
         if (rb == null)
         {
-            Debug.LogError("ProjectileGlideControl requiere un Rigidbody.", this);
             enabled = false;
             return;
         }
@@ -59,7 +59,12 @@ public class ProjectileGlideControl : MonoBehaviour
         rb.linearVelocity = launchVelocity;
         targetZPosition = transform.position.z;
         previousYVelocity = rb.linearVelocity.y;
-        Debug.Log(gameObject.name + " ENERGY GLIDE Activated.");
+
+        if (audioSource != null && onGlideActivateSound != null)
+        {
+            audioSource.PlayOneShot(onGlideActivateSound);
+        }
+
         if (spriteManager != null)
         {
             spriteManager.SetGlideSprite();
@@ -129,6 +134,5 @@ public class ProjectileGlideControl : MonoBehaviour
         if (!isGliding) return;
         isGliding = false;
         this.enabled = false;
-        Debug.Log(gameObject.name + " ENERGY GLIDE Deactivated.");
     }
 }
