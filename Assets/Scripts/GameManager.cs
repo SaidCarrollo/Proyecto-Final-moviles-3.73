@@ -9,6 +9,7 @@ public class GameManager : SingletonNonPersistent<GameManager>
     private int enemiesRemaining;
     private bool isGameOver = false;
     public GameObject PanelGameover;
+    public GameObject PanelGameWon;
     void Start()
     {
         enemiesRemaining = FindObjectsOfType<Enemy>().Length;
@@ -55,12 +56,12 @@ public class GameManager : SingletonNonPersistent<GameManager>
         if (isGameOver) return;
         isGameOver = true;
         Debug.Log("¡GANASTE EL NIVEL!");
+
+        int stars = 1; // Por defecto, 1 estrella por ganar
         Slingshot slingshot = FindObjectOfType<Slingshot>();
         if (slingshot != null)
         {
             int projectilesSpared = slingshot.projectilesRemaining_TotalLaunches;
-            int stars = 1; 
-
             if (projectilesSpared >= 2)
             {
                 stars = 3;
@@ -69,16 +70,30 @@ public class GameManager : SingletonNonPersistent<GameManager>
             {
                 stars = 2;
             }
-
             Debug.Log($"Proyectiles de sobra: {projectilesSpared}. Estrellas obtenidas: {stars} / 3");
         }
         else
         {
             Debug.LogWarning("No se pudo encontrar el Slingshot en la escena para calcular las estrellas.");
         }
-        OnGameWon?.Invoke(); 
-    }
 
+        if (PanelGameWon != null)
+        {
+            PanelGameWon.SetActive(true);
+
+            WinPanelAnimator winAnimator = PanelGameWon.GetComponent<WinPanelAnimator>();
+            if (winAnimator != null)
+            {
+                winAnimator.ShowStars(stars);
+            }
+            else
+            {
+                Debug.LogError("El Panel de Victoria no tiene el script 'WinPanelAnimator'.");
+            }
+        }
+
+        OnGameWon?.Invoke();
+    }
     private void LoseGame()
     {
         if (isGameOver) return;
