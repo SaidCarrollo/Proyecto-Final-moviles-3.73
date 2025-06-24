@@ -7,7 +7,8 @@ public class WinPanelAnimator : MonoBehaviour
 {
     public Image[] stars;
     public float animationDuration = 0.5f; 
-    public float delayBetweenStars = 0.3f; 
+    public float delayBetweenStars = 0.3f;
+    public float targetStarScale = 3.5f;
     public CanvasGroup panelCanvasGroup; 
 
     void OnEnable()
@@ -32,8 +33,8 @@ public class WinPanelAnimator : MonoBehaviour
         for (int i = 0; i < numberOfStars; i++)
         {
             starSequence.Append(
-                stars[i].transform.DOScale(Vector3.one, animationDuration)
-                    .SetEase(Ease.OutBack) 
+                stars[i].transform.DOScale(targetStarScale, animationDuration)
+                    .SetEase(Ease.OutBack)
             );
 
             if (i < numberOfStars - 1)

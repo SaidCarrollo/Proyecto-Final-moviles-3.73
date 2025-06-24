@@ -1610,6 +1610,7 @@ MonoBehaviour:
   - {fileID: 1658887247}
   animationDuration: 0.5
   delayBetweenStars: 0.3
+  targetStarScale: 3.5
   panelCanvasGroup: {fileID: 574944077}
 --- !u!225 &574944077
 CanvasGroup:
@@ -4115,7 +4116,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 265.00012, y: 75}
+  m_AnchoredPosition: {x: 303.6, y: 75}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1658887246
