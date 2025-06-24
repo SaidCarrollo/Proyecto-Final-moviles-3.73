@@ -168,4 +168,64 @@ public class FirebaseManager : SingletonPersistent<FirebaseManager>
             default: return "Error al iniciar sesión. Inténtalo de nuevo.";
         }
     }
+    // --- MÉTODO NUEVO PARA ELIMINAR CUENTA ---
+    public async Task DeleteUserAccount(string password)
+    {
+        // 1. Comprobar si hay un usuario logueado
+        if (CurrentUser == null)
+        {
+            OnFeedbackMessage?.Invoke("Debes iniciar sesión para eliminar tu cuenta.");
+            return;
+        }
+
+        OnFeedbackMessage?.Invoke("Verificando credenciales...");
+        FirebaseUser user = CurrentUser;
+
+        try
+        {
+            // 2. Obtener credenciales para la re-autenticación (requerido por Firebase por seguridad)
+            Credential credential = EmailAuthProvider.GetCredential(user.Email, password);
+            await user.ReauthenticateAsync(credential);
+
+            // 3. Si la re-autenticación es exitosa, eliminar los datos de Firestore
+            OnFeedbackMessage?.Invoke("Eliminando datos del jugador...");
+            DocumentReference userDoc = db.Collection("users").Document(user.UserId);
+            await userDoc.DeleteAsync();
+            Debug.Log($"Documento del usuario {user.UserId} eliminado de Firestore.");
+
+            // 4. Eliminar el usuario de Firebase Authentication
+            OnFeedbackMessage?.Invoke("Eliminando cuenta...");
+            await user.DeleteAsync();
+
+            Debug.Log("Cuenta de usuario eliminada permanentemente.");
+            // Firebase llamará automáticamente a OnAuthStateChanged, que gestionará el logout y actualizará la UI.
+            OnFeedbackMessage?.Invoke("Cuenta eliminada correctamente.");
+        }
+        catch (FirebaseException ex)
+        {
+            // 5. Manejar errores comunes
+            AuthError errorCode = (AuthError)ex.ErrorCode;
+            string errorMessage;
+            switch (errorCode)
+            {
+                case AuthError.WrongPassword:
+                    errorMessage = "La contraseña es incorrecta. No se puede eliminar la cuenta.";
+                    break;
+                case AuthError.RequiresRecentLogin:
+                    errorMessage = "Por seguridad, debes volver a iniciar sesión antes de eliminar tu cuenta.";
+                    break;
+                default:
+                    errorMessage = "Error al intentar eliminar la cuenta.";
+                    break;
+            }
+            Debug.LogError($"Error al eliminar la cuenta: {ex.Message}");
+            OnFeedbackMessage?.Invoke(errorMessage);
+        }
+    }
+    // --- MÉTODO PÚBLICO PARA DISPARAR EL FEEDBACK DESDE FUERA ---
+    public void TriggerFeedbackMessage(string message)
+    {
+        // Este método SÍ puede invocar el evento porque está dentro de la clase FirebaseManager.
+        OnFeedbackMessage?.Invoke(message);
+    }
 }

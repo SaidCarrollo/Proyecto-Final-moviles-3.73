@@ -242,6 +242,7 @@ GameObject:
   - component: {fileID: 104579151}
   - component: {fileID: 104579150}
   - component: {fileID: 104579149}
+  - component: {fileID: 104579154}
   m_Layer: 5
   m_Name: SiguienteNivel
   m_TagString: Untagged
@@ -258,14 +259,14 @@ RectTransform:
   m_GameObject: {fileID: 104579147}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.1585821, y: 1.1585821, z: 1.1585821}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 145332846}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 700, y: -686.1286}
+  m_AnchoredPosition: {x: 725.11, y: -686.1286}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &104579149
@@ -344,9 +345,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 104579149}
-        m_TargetAssemblyTypeName: LevelButtonController, Assembly-CSharp
-        m_MethodName: OnLevelSelected
+      - m_Target: {fileID: 835305619}
+        m_TargetAssemblyTypeName: LevelCompletionTrigger, Assembly-CSharp
+        m_MethodName: CompleteLevel
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -356,9 +357,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 835305619}
-        m_TargetAssemblyTypeName: LevelCompletionTrigger, Assembly-CSharp
-        m_MethodName: CompleteLevel
+      - m_Target: {fileID: 104579149}
+        m_TargetAssemblyTypeName: LevelButtonController, Assembly-CSharp
+        m_MethodName: OnLevelSelected
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -388,7 +389,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 065d25a3afed31746adb40905b2e6360, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 65df927a5ca2584438f2f28894367b2b, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -397,7 +398,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 34.07
 --- !u!222 &104579153
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -406,6 +407,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 104579147}
   m_CullTransparentMesh: 1
+--- !u!114 &104579154
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 104579147}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfabb0440166ab443bba8876756fdfa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_EffectColor: {r: 0, g: 0, b: 0, a: 1}
+  m_EffectDistance: {x: 0.96, y: -3.09}
+  m_UseGraphicAlpha: 1
 --- !u!1 &145332845
 GameObject:
   m_ObjectHideFlags: 0
@@ -466,7 +482,7 @@ MonoBehaviour:
   m_StartCorner: 0
   m_StartAxis: 0
   m_CellSize: {x: 100, y: 100}
-  m_Spacing: {x: 0, y: 0}
+  m_Spacing: {x: 25.11, y: 0}
   m_Constraint: 0
   m_ConstraintCount: 2
 --- !u!1 &152466937
@@ -938,7 +954,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 44de592f0038cd048afff4748d7b876f, type: 3}
+  m_Sprite: {fileID: 21300000, guid: e0d264402ac4ae844b1ce08d09b6dcfc, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -958,8 +974,8 @@ Transform:
   m_GameObject: {fileID: 293564150}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 24.2381, y: 5.61, z: 25.241432}
-  m_LocalScale: {x: 5.2793665, y: 3.8078547, z: 1}
+  m_LocalPosition: {x: 21.1, y: 5.61, z: 25.241432}
+  m_LocalScale: {x: 4.8707433, y: 3.8078547, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -2214,7 +2230,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 500, y: -449.7804}
+  m_AnchoredPosition: {x: 474.89, y: -449.7804}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &842196575
@@ -3271,7 +3287,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 650, y: -399.7804}
+  m_AnchoredPosition: {x: 675.11, y: -399.7804}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1346910893
@@ -4262,7 +4278,7 @@ MonoBehaviour:
   m_StartCorner: 0
   m_StartAxis: 0
   m_CellSize: {x: 100, y: 100}
-  m_Spacing: {x: 0, y: 0}
+  m_Spacing: {x: 25.11, y: 0}
   m_Constraint: 0
   m_ConstraintCount: 2
 --- !u!114 &1744015812
@@ -5228,7 +5244,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 500, y: -686.1286}
+  m_AnchoredPosition: {x: 474.89, y: -686.1286}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2006653278
@@ -5307,6 +5323,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
+      - m_Target: {fileID: 835305619}
+        m_TargetAssemblyTypeName: LevelCompletionTrigger, Assembly-CSharp
+        m_MethodName: CompleteLevel
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
       - m_Target: {fileID: 2006653278}
         m_TargetAssemblyTypeName: LevelButtonController, Assembly-CSharp
         m_MethodName: OnLevelSelected
@@ -5677,9 +5705,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2125864198}
-        m_TargetAssemblyTypeName: LevelButtonController, Assembly-CSharp
-        m_MethodName: OnLevelSelected
+      - m_Target: {fileID: 835305619}
+        m_TargetAssemblyTypeName: LevelCompletionTrigger, Assembly-CSharp
+        m_MethodName: CompleteLevel
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -5689,9 +5717,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 835305619}
-        m_TargetAssemblyTypeName: LevelCompletionTrigger, Assembly-CSharp
-        m_MethodName: CompleteLevel
+      - m_Target: {fileID: 2125864198}
+        m_TargetAssemblyTypeName: LevelButtonController, Assembly-CSharp
+        m_MethodName: OnLevelSelected
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
