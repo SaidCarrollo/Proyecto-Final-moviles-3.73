@@ -20,7 +20,7 @@ public class Enemy : MonoBehaviour
 
     private float currentHealth;
     private AudioSource audioSource;
-
+    private bool isDead = false;
     void Awake()
     {
         currentHealth = maxHealth;
@@ -31,7 +31,23 @@ public class Enemy : MonoBehaviour
             audioSource = gameObject.AddComponent<AudioSource>();
         }
     }
+    void OnEnable()
+    {
 
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RegisterEnemy();
+        }
+    }
+
+    void OnDisable()
+    {
+
+        if (isDead && GameManager.Instance != null)
+        {
+            GameManager.Instance.DeregisterEnemy();
+        }
+    }
     public void TakeDamage(float damageAmount)
     {
         currentHealth -= damageAmount;
@@ -49,7 +65,9 @@ public class Enemy : MonoBehaviour
 
     private void Die()
     {
-        GameManager.Instance.RegisterEnemyDeath();
+        if (isDead) return;
+        isDead = true; 
+
         if (destructionEffectPrefab != null)
         {
             Instantiate(destructionEffectPrefab, transform.position, Quaternion.identity);
@@ -59,7 +77,6 @@ public class Enemy : MonoBehaviour
         {
             AudioSource.PlayClipAtPoint(destructionSound, transform.position);
         }
-
 
         gameObject.SetActive(false);
     }
