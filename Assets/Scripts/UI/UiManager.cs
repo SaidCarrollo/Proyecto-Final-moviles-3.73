@@ -69,7 +69,7 @@ public class UIManager : MonoBehaviour
     {
         if (cameraFollower != null)
         {
-            cameraFollower.ResetToSlingshotView();
+            cameraFollower.ToggleCameraView();
         }
     }
 
