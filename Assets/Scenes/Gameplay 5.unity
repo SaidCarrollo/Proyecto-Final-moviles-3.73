@@ -711,15 +711,17 @@ MonoBehaviour:
   target: {fileID: 0}
   smoothSpeed: 5
   offset: {x: 0, y: 2}
-  fixedZPosition: -20
-  panSpeed: 20
-  panBoundsX: {x: -5.54, y: 51}
-  panBoundsY: {x: -5.9, y: 17}
-  slingshot: {fileID: 1945294344}
-  zoomSpeed: 2
-  minZoom: -15
-  maxZoom: -40
   slingshotTransform: {fileID: 2068858728}
+  closeUpOffset: {x: 0, y: 0}
+  wideViewOffset: {x: 15, y: 10}
+  panSpeed: 20
+  zoomSpeedPerspective: 2
+  minZoomZ: -15
+  maxZoomZ: -40
+  zoomSpeedOrthographic: 1
+  minZoomOrtho: 5
+  maxZoomOrtho: 20
+  backgroundSprite: {fileID: 293564151}
 --- !u!1 &382989585
 GameObject:
   m_ObjectHideFlags: 0
