@@ -920,7 +920,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a9c3126a516e8a143b3e4c9ee4b3890b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneToLoad: {fileID: 11400000, guid: 09231513ca85afe4d8c98dc8fbf260ff, type: 2}
+  sceneToLoad: {fileID: 11400000, guid: 73846adc98c331b4198d88351918c6fc, type: 2}
   sceneLoadChannel: {fileID: 11400000, guid: 9231c6c7df01b484f9b699f8240573da, type: 2}
   activatePreloadedSceneChannel: {fileID: 11400000, guid: 49944806bd894b046af71bac64422e4d, type: 2}
   buttonCanvasGroup: {fileID: 0}
@@ -984,7 +984,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1940579689}
         m_TargetAssemblyTypeName: LevelCompletionTrigger, Assembly-CSharp
         m_MethodName: CompleteLevel
         m_Mode: 1
@@ -1098,7 +1098,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a9c3126a516e8a143b3e4c9ee4b3890b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneToLoad: {fileID: 11400000, guid: 7894180ed38dd03479d503acfd30cc03, type: 2}
+  sceneToLoad: {fileID: 11400000, guid: 2b37d291362fa7b4c8caa459545337a2, type: 2}
   sceneLoadChannel: {fileID: 11400000, guid: 9231c6c7df01b484f9b699f8240573da, type: 2}
   activatePreloadedSceneChannel: {fileID: 11400000, guid: 49944806bd894b046af71bac64422e4d, type: 2}
   buttonCanvasGroup: {fileID: 0}
@@ -1162,7 +1162,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1940579689}
         m_TargetAssemblyTypeName: LevelCompletionTrigger, Assembly-CSharp
         m_MethodName: CompleteLevel
         m_Mode: 1
@@ -1557,7 +1557,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1940579689}
         m_TargetAssemblyTypeName: LevelCompletionTrigger, Assembly-CSharp
         m_MethodName: CompleteLevel
         m_Mode: 1
@@ -5759,13 +5759,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxStretch: 3
   launchForceMultiplier: 300
-  totalProjectiles: 3
+  totalProjectiles: 5
   timeToPrepareNext: 0.5
   anchorPoint: {fileID: 1030163930}
   spawnPoint: {fileID: 411198300}
   projectilePrefabs_TypeSequence:
   - {fileID: 7655279780453328577, guid: 459cc1681cb56d6458e690497b6e1e3b, type: 3}
   - {fileID: 7655279780453328577, guid: 6b0090580dade7c4fa5918cb839391b8, type: 3}
+  - {fileID: 7655279780453328577, guid: 2dde7e231c02dc0488e46c460c7313da, type: 3}
+  - {fileID: 7655279780453328577, guid: 2dde7e231c02dc0488e46c460c7313da, type: 3}
   - {fileID: 7655279780453328577, guid: 2dde7e231c02dc0488e46c460c7313da, type: 3}
   bandLeft: {fileID: 2010178618}
   bandRight: {fileID: 775386547}
