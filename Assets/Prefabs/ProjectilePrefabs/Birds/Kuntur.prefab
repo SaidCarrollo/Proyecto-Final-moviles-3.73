@@ -298,7 +298,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   liftMultiplier: 0.5
-  parasiticDrag: 0.1
+  parasiticDrag: 0.07
   inducedDrag: 1.5
   controlSensitivity: 1
   diveThrust: 6
